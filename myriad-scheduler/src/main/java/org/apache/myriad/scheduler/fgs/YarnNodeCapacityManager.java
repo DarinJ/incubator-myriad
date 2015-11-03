@@ -19,6 +19,7 @@
 package org.apache.myriad.scheduler.fgs;
 
 import org.apache.myriad.executor.ContainerTaskStatusRequest;
+import org.apache.myriad.scheduler.TaskUtils;
 import org.apache.myriad.scheduler.yarn.interceptor.BaseInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -68,10 +69,10 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
   private final OfferLifecycleManager offerLifecycleMgr;
   private final NodeStore nodeStore;
   private final org.apache.myriad.state.SchedulerState state;
-
+  private TaskUtils taskUtils;
   @Inject
   public YarnNodeCapacityManager(org.apache.myriad.scheduler.yarn.interceptor.InterceptorRegistry registry, AbstractYarnScheduler yarnScheduler, RMContext rmContext, org.apache.myriad.scheduler.MyriadDriver myriadDriver, OfferLifecycleManager
-      offerLifecycleMgr, NodeStore nodeStore, org.apache.myriad.state.SchedulerState state) {
+      offerLifecycleMgr, NodeStore nodeStore, org.apache.myriad.state.SchedulerState state, TaskUtils taskUtils) {
     if (registry != null) {
       registry.register(this);
     }
@@ -81,6 +82,7 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
     this.offerLifecycleMgr = offerLifecycleMgr;
     this.nodeStore = nodeStore;
     this.state = state;
+    this.taskUtils = taskUtils;
   }
 
   @Override
@@ -199,7 +201,7 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
   }
 
   private Protos.TaskInfo getTaskInfoForContainer(RMContainer rmContainer, ConsumedOffer consumedOffer, Node node) {
-
+    //TODO (dbjohn5) getTaskUtils in here
     Protos.Offer offer = consumedOffer.getOffers().get(0);
     Container container = rmContainer.getContainer();
     Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(ContainerTaskStatusRequest.YARN_CONTAINER_TASK_ID_PREFIX + container.getId().toString()).build();
@@ -208,12 +210,19 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
     // as this is now cached in the NodeTask object in scheduler state.
     Protos.ExecutorInfo executorInfo = node.getExecInfo();
     if (executorInfo == null) {
-      executorInfo = Protos.ExecutorInfo.newBuilder(state.getNodeTask(offer.getSlaveId(), org.apache.myriad.configuration.NodeManagerConfiguration.NM_TASK_PREFIX).getExecutorInfo()).setFrameworkId(offer.getFrameworkId()).build();
+      executorInfo = Protos
+          .ExecutorInfo.newBuilder(state.getNodeTask(offer.getSlaveId(),
+              org.apache.myriad.configuration.NodeManagerConfiguration.NM_TASK_PREFIX).getExecutorInfo())
+          .setFrameworkId(offer.getFrameworkId()).build();
       node.setExecInfo(executorInfo);
     }
 
-    return Protos.TaskInfo.newBuilder().setName("task_" + taskId.getValue()).setTaskId(taskId).setSlaveId(offer.getSlaveId()).addResources(Protos.Resource.newBuilder().setName("cpus").setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar
-        .newBuilder().setValue(container.getResource().getVirtualCores()))).addResources(Protos.Resource.newBuilder().setName("mem").setType(Protos.Value.Type.SCALAR).setScalar(Protos.Value.Scalar.newBuilder().setValue(container.getResource()
-        .getMemory()))).setExecutor(executorInfo).build();
+    return Protos.TaskInfo.newBuilder()
+        .setName("task_" + taskId.getValue()).setTaskId(taskId)
+        .setSlaveId(offer.getSlaveId())
+        .addAllResources(taskUtils.getScalarResource(offer, "cpus", (double) container.getResource().getVirtualCores(), 0.0))
+        .addAllResources(taskUtils.getScalarResource(offer, "mem", (double) container.getResource().getMemory(), 0.0))
+        .setExecutor(executorInfo)
+        .build();
   }
 }
