@@ -40,12 +40,9 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.google.common.base.Preconditions;
 import org.apache.mesos.Protos;
-import org.apache.myriad.configuration.MyriadBadConfigurationException;
-import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.configuration.MyriadExecutorConfiguration;
-import org.apache.myriad.configuration.NodeManagerConfiguration;
-import org.apache.myriad.configuration.ServiceConfiguration;
+import org.apache.myriad.configuration.*;
 import org.apache.myriad.executor.MyriadExecutorDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -206,6 +203,30 @@ public class TaskUtils {
       throw new MyriadBadConfigurationException("memory is not defined for task with name: " + taskName);
     }
     return auxConf.getJvmMaxMemoryMB().get();
+  }
+
+  public Iterable<Protos.Volume> getVolumes(Iterable<String> volume) {
+    return new ArrayList<Protos.Volume>();
+  }
+
+  public Protos.ContainerInfo.DockerInfo getDockerInfo(MyriadDockerConfiguration dockerConfiguration, Protos.Offer offer) {
+    Protos.ContainerInfo.DockerInfo.Builder dockerBuilder= Protos.ContainerInfo.DockerInfo.newBuilder()
+        .setImage(dockerConfiguration.getImage())
+        .setNetwork(Protos.ContainerInfo.DockerInfo.Network.valueOf(dockerConfiguration.getNetwork()))
+        .setPrivileged(dockerConfiguration.getPrivledged());
+    return Protos.ContainerInfo.DockerInfo.newBuilder().build();
+  }
+
+  public Protos.ContainerInfo getContainerInfo(Protos.Offer offer) {
+    Preconditions.checkArgument(cfg.getContainerConfiguration().isPresent(),"ContainerConfiguration doesn't exist!");
+    MyriadContainerConfiguration containerConfiguration = cfg.getContainerConfiguration().get();
+    Protos.ContainerInfo.Builder containerBuilder = Protos.ContainerInfo.newBuilder()
+        .setType(Protos.ContainerInfo.Type.valueOf(containerConfiguration.getType()));
+    if(containerConfiguration.getDockerConfiguration().isPresent()) {
+      MyriadDockerConfiguration dockerConfiguration = containerConfiguration.getDockerConfiguration().get();
+      containerBuilder.setDocker(getDockerInfo(dockerConfiguration, offer));
+    }
+    return containerBuilder.build();
   }
 
   /**
