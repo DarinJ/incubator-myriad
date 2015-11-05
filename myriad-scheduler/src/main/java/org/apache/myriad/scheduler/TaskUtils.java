@@ -52,7 +52,11 @@ import javax.xml.xpath.XPathFactory;
 
 import com.google.common.base.Preconditions;
 import org.apache.mesos.Protos;
-import org.apache.myriad.configuration.*;
+import org.apache.myriad.configuration.MyriadBadConfigurationException;
+import org.apache.myriad.configuration.MyriadConfiguration;
+import org.apache.myriad.configuration.MyriadExecutorConfiguration;
+import org.apache.myriad.configuration.NodeManagerConfiguration;
+import org.apache.myriad.configuration.ServiceConfiguration;
 import org.apache.myriad.executor.MyriadExecutorDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +71,7 @@ import org.xml.sax.SAXException;
  */
 public class TaskUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(TaskUtils.class);
+
   private static final String YARN_NODEMANAGER_RESOURCE_CPU_VCORES = "yarn.nodemanager.resource.cpu-vcores";
   private static final String YARN_NODEMANAGER_RESOURCE_MEMORY_MB = "yarn.nodemanager.resource.memory-mb";
   private static final String CONTAINER_PATH_KEY = "containerPath";
