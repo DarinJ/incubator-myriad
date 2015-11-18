@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import java.util.Map;
+
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -53,6 +54,14 @@ import org.hibernate.validator.constraints.NotEmpty;
  * executor:
  * jvmMaxMemoryMB: 256
  * path: file://localhost/usr/local/libexec/mesos/myriad-executor-runnable-0.1.0.jar
+ * containerConfiguration:
+ *   volumes:
+ *     -
+ *       containerPath: path
+ *       hostPath: path
+ *     -
+ *       containerPath: path
+ *       hostPath: path
  * yarnEnvironment:
  * YARN_HOME: /usr/local/hadoop
  */
@@ -159,6 +168,8 @@ public class MyriadConfiguration {
   @JsonProperty
   private String mesosAuthenticationSecretFilename;
 
+  @JsonProperty
+  private Boolean strictIPAddressing;
 
   public MyriadConfiguration() {
   }
@@ -260,4 +271,7 @@ public class MyriadConfiguration {
     return mesosAuthenticationPrincipal;
   }
 
+  public Boolean getStrictIPAddressing() {
+    return this.strictIPAddressing != null ? this.strictIPAddressing : false;
+  }
 }

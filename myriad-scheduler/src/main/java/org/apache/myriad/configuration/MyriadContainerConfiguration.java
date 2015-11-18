@@ -1,11 +1,11 @@
 package org.apache.myriad.configuration;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.base.Optional;
-import com.google.common.collect.Maps;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,17 +18,18 @@ public class MyriadContainerConfiguration {
   @JsonProperty
   private MyriadDockerConfiguration dockerConfiguration;
   @JsonProperty
-  private Map<String,String> volumeMap;
+  private List<Map<String, String>> volumes;
+
+  @JsonProperty
   public String getType() {
     return type;
   }
+
   public Optional<MyriadDockerConfiguration> getDockerConfiguration() {
     return Optional.fromNullable(dockerConfiguration);
   }
-  public Map<String,String> getVolumMap() {
-    if(volumeMap==null)
-      return Maps.newHashMap();
-    else
-      return volumeMap;
+
+  public Iterable<Map<String, String>> getVolumes() {
+    return volumes == null ? new ArrayList<Map<String, String>>() : volumes;
   }
 }
