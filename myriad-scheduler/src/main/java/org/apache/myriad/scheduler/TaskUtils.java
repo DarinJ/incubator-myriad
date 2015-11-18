@@ -23,9 +23,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ranges;
 import com.google.common.collect.Sets;
-import com.google.common.collect.DiscreteDomains;
 
 
 import java.io.IOException;
@@ -51,12 +49,9 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.*;
 import org.apache.mesos.Protos;
-import org.apache.myriad.configuration.MyriadBadConfigurationException;
-import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.configuration.MyriadExecutorConfiguration;
-import org.apache.myriad.configuration.NodeManagerConfiguration;
-import org.apache.myriad.configuration.ServiceConfiguration;
+import org.apache.myriad.configuration.*;
 import org.apache.myriad.executor.MyriadExecutorDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +66,6 @@ import org.xml.sax.SAXException;
  */
 public class TaskUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(TaskUtils.class);
-
   private static final String YARN_NODEMANAGER_RESOURCE_CPU_VCORES = "yarn.nodemanager.resource.cpu-vcores";
   private static final String YARN_NODEMANAGER_RESOURCE_MEMORY_MB = "yarn.nodemanager.resource.memory-mb";
   private static final String CONTAINER_PATH_KEY = "containerPath";
@@ -332,7 +326,7 @@ public class TaskUtils {
     for (Protos.Resource resource : offer.getResourcesList()) {
       if (resource.hasRanges() && resource.getName().equals("ports") && (!resource.hasRole() || resource.getRole().equals("*"))) {
         for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
-          allAvailablePorts.addAll(Ranges.closed(range.getBegin(), range.getEnd()).asSet(DiscreteDomains.longs()));
+          allAvailablePorts.addAll(ContiguousSet.create(Range.closed(range.getBegin(), range.getEnd()), DiscreteDomain.longs()));
         }
       }
     }
@@ -360,7 +354,7 @@ public class TaskUtils {
             } else if (values.get(i) >= begin && values.get(i) <= end) {
               ports.add(i, values.get(i));
             } else if (!resource.hasRole() || resource.getRole().equals("*")) {
-              allAvailablePorts.addAll(Ranges.closed(begin, end).asSet(DiscreteDomains.longs()));
+              allAvailablePorts.addAll(ContiguousSet.create(Range.closed(begin, end), DiscreteDomain.longs()));
             }
           }
         }

@@ -84,6 +84,7 @@ public class TestTaskUtils {
     Gson gson = new GsonBuilder().registerTypeAdapter(ServiceResourceProfile.class, new ServiceResourceProfile.CustomDeserializer())
         .create();
 
+
     ServiceResourceProfile parentProfile = new ServiceResourceProfile("abc", 1.0, 100.0);
 
     String parentStr = gson.toJson(parentProfile);
