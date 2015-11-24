@@ -121,10 +121,10 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
     }
     addYarnNodemanagerOpt(KEY_NM_RESOURCE_CPU_VCORES, Integer.toString(profile.getCpus().intValue()));
     addYarnNodemanagerOpt(KEY_NM_RESOURCE_MEM_MB, Integer.toString(profile.getMemory().intValue()));
-    addYarnNodemanagerOpt(KEY_NM_ADDRESS, ALL_LOCAL_IPV4ADDR + ports.get(0).toString());
-    addYarnNodemanagerOpt(KEY_NM_LOCALIZER_ADDRESS, ALL_LOCAL_IPV4ADDR + ports.get(1).toString());
-    addYarnNodemanagerOpt(KEY_NM_WEBAPP_ADDRESS, ALL_LOCAL_IPV4ADDR + ports.get(2).toString());
-    addYarnNodemanagerOpt(KEY_NM_SHUFFLE_PORT, ports.get(3).toString());
+    addYarnNodemanagerOpt(KEY_NM_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(0).getPort()));
+    addYarnNodemanagerOpt(KEY_NM_LOCALIZER_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(1).getPort()));
+    addYarnNodemanagerOpt(KEY_NM_WEBAPP_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(2).getPort()));
+    addYarnNodemanagerOpt(KEY_NM_SHUFFLE_PORT, Long.toString(ports.get(3).getPort()));
   }
 
   protected void appendEnvForNM(StringBuilder cmdLine) {
