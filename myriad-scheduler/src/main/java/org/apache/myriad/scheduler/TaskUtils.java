@@ -20,6 +20,13 @@ package org.apache.myriad.scheduler;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ranges;
+import com.google.common.collect.Sets;
+import com.google.common.collect.DiscreteDomains;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +51,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
 import org.apache.mesos.Protos;
 import org.apache.myriad.configuration.*;
 import org.apache.myriad.executor.MyriadExecutorDefaults;
@@ -321,7 +327,7 @@ public class TaskUtils {
     for (Protos.Resource resource : offer.getResourcesList()) {
       if (resource.hasRanges() && resource.getName().equals("ports") && (!resource.hasRole() || resource.getRole().equals("*"))) {
         for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
-          allAvailablePorts.addAll(ContiguousSet.create(Range.closed(range.getBegin(), range.getEnd()), DiscreteDomain.longs()));
+          allAvailablePorts.addAll(Ranges.closed(range.getBegin(), range.getEnd()).asSet(DiscreteDomains.longs()));
         }
       }
     }
@@ -349,7 +355,7 @@ public class TaskUtils {
             } else if (values.get(i) >= begin && values.get(i) <= end) {
               ports.add(i, values.get(i));
             } else if (!resource.hasRole() || resource.getRole().equals("*")) {
-              allAvailablePorts.addAll(ContiguousSet.create(Range.closed(begin, end), DiscreteDomain.longs()));
+              allAvailablePorts.addAll(Ranges.closed(begin, end).asSet(DiscreteDomains.longs()));
             }
           }
         }

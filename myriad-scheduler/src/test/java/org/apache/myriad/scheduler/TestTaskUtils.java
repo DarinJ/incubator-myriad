@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
+import com.google.common.collect.Ranges;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -169,8 +170,8 @@ public class TestTaskUtils {
   }
   private void checkResourceList(Iterable<Protos.Resource> resources, String name, Double roleVal, Double defaultVal) {
     int i = 0;
-    Range defaultValueRange = Range.closed(defaultVal - epsilon, defaultVal + epsilon);
-    Range roleValueRange = Range.closed(roleVal - epsilon, roleVal + epsilon);
+    Range defaultValueRange = Ranges.closed(defaultVal - epsilon, defaultVal + epsilon);
+    Range roleValueRange = Ranges.closed(roleVal - epsilon, roleVal + epsilon);
 
     for (Protos.Resource resource: resources) {
       if (resource.hasRole() && resource.getRole().equals("test")) {
