@@ -87,7 +87,6 @@ subprojects {
 
         testCompile 'org.apache.zookeeper:zookeeper:3.4.6' // to resolve temporary mavenlocal issue
         runtime 'com.google.guava:guava:11.0.2'
-
         testCompile 'junit:junit:4.12'
         testCompile 'commons-collections:commons-collections:3.2.1'
     }
