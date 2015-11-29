@@ -148,7 +148,8 @@ public class Main {
     LOGGER.info("Initializing Profiles");
     ServiceProfileManager profileManager = injector.getInstance(ServiceProfileManager.class);
     TaskConstraintsManager taskConstraintsManager = injector.getInstance(TaskConstraintsManager.class);
-    taskConstraintsManager.addTaskConstraints(NodeManagerConfiguration.NM_TASK_PREFIX, new TaskFactory.NMTaskConstraints());
+    taskConstraintsManager.addTaskConstraints(NodeManagerConfiguration.NM_TASK_PREFIX,
+        new TaskFactory.NMTaskConstraints(injector.getInstance(MyriadConfiguration.class).getNodeManagerConfiguration()));
     Map<String, Map<String, String>> profiles = injector.getInstance(MyriadConfiguration.class).getProfiles();
     TaskUtils taskUtils = injector.getInstance(TaskUtils.class);
     if (MapUtils.isNotEmpty(profiles)) {

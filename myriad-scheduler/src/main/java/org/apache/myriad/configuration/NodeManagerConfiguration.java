@@ -20,10 +20,13 @@ package org.apache.myriad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerBoolean;
 import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerDouble;
 import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerString;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import java.util.List;
 
 /**
  * Node Manager Configuration
@@ -52,6 +55,9 @@ public class NodeManagerConfiguration {
   @JsonProperty
   @JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
+
+  @JsonProperty
+  private List<Long> ports;
 
   /**
    * Amount of CPU share given to NodeManger JVM. This is critical specially
@@ -90,4 +96,9 @@ public class NodeManagerConfiguration {
   public Optional<Boolean> getCgroups() {
     return Optional.fromNullable(cgroups);
   }
+
+  public List<Long> getPorts() {
+    return ports != null ? ports : Lists.newArrayList(0L, 0L, 0L, 0L);
+  }
+
 }

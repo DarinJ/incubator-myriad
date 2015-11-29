@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Helper class for dynamically assigning ports to nodemanager
  */
-public class NMPorts implements Ports {
+public class NMPorts {
   private static final String NM_RPC_PORT_KEY = "nm.rpc.port";
   private static final String NM_LOCALIZER_PORT_KEY = "nm.localizer.port";
   private static final String NM_WEBAPP_HTTP_PORT_KEY = "nm.webapp.http.port";

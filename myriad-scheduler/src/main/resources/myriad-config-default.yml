@@ -50,6 +50,7 @@ nodemanager:
   jvmMaxMemoryMB: 1024
   cpus: 0.2
   cgroups: false
+  ports: [0,0,0,0]
 executor:
   jvmMaxMemoryMB: 256
   path: file:///usr/local/libexec/mesos/myriad-executor-runnable-0.1.0.jar

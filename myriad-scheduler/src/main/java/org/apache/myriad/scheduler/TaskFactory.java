@@ -19,8 +19,6 @@
 package org.apache.myriad.scheduler;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -33,12 +31,11 @@ import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Value.Range;
 import org.apache.myriad.configuration.MyriadConfiguration;
 import org.apache.myriad.configuration.MyriadExecutorConfiguration;
+import org.apache.myriad.configuration.NodeManagerConfiguration;
 import org.apache.myriad.state.NodeTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,53 +80,9 @@ public interface TaskFactory {
       this.cfg = cfg;
       this.taskUtils = taskUtils;
       this.clGenerator = clGenerator;
-      this.constraints = new NMTaskConstraints();
+      this.constraints = new NMTaskConstraints(cfg.getNodeManagerConfiguration());
     }
 
-    @VisibleForTesting
-    protected static HashSet<Long> getNMPorts(Resource resource) {
-      HashSet<Long> ports = new HashSet<>();
-      if (resource.getName().equals("ports")) {
-        /*
-        ranges.getRangeList() returns a list of ranges, each range specifies a begin and end only.
-        so must loop though each range until we get all ports needed.  We exit each loop as soon as all
-        ports are found so bounded by NMPorts.expectedNumPorts.
-        */
-        final List<Range> ranges = resource.getRanges().getRangeList();
-        final List<Long> allAvailablePorts = new ArrayList<>();
-        for (Range range : ranges) {
-          if (range.hasBegin() && range.hasEnd()) {
-            for (long i = range.getBegin(); i <= range.getEnd(); i++) {
-              allAvailablePorts.add(i);
-            }
-          }
-        }
-
-        Preconditions.checkState(allAvailablePorts.size() >= NMPorts.expectedNumPorts(), "Not enough ports in offer");
-
-        while (ports.size() < NMPorts.expectedNumPorts()) {
-          int portIndex = rand.nextInt(allAvailablePorts.size());
-          ports.add(allAvailablePorts.get(portIndex));
-          allAvailablePorts.remove(portIndex);
-        }
-      }
-      return ports;
-    }
-
-    //Utility function to get the first NMPorts.expectedNumPorts number of ports of an offer
-    @VisibleForTesting
-    protected static NMPorts getPorts(Offer offer) {
-      HashSet<Long> ports = new HashSet<>();
-      for (Resource resource : offer.getResourcesList()) {
-        if (resource.getName().equals("ports") && (!resource.hasRole() || resource.getRole().equals("*"))) {
-          ports = getNMPorts(resource);
-          break;
-        }
-      }
-
-      Long [] portArray = ports.toArray(new Long [ports.size()]);
-      return new NMPorts(portArray);
-    }
 
     @VisibleForTesting
     CommandInfo getCommandInfo(ServiceResourceProfile profile, AbstractPorts ports) {
@@ -173,9 +126,8 @@ public interface TaskFactory {
       Objects.requireNonNull(offer, "Offer should be non-null");
       Objects.requireNonNull(nodeTask, "NodeTask should be non-null");
 
-      NMPorts ports = getPorts(offer);
-      LOGGER.debug(ports.toString());
       AbstractPorts aports = taskUtils.getRandomPortResources(offer, 4, new HashSet<Long>());
+      LOGGER.debug(aports.toString());
       ServiceResourceProfile serviceProfile = nodeTask.getProfile();
       Double taskMemory = serviceProfile.getAggregateMemory();
       Double taskCpus = serviceProfile.getAggregateCpu();
@@ -210,10 +162,14 @@ public interface TaskFactory {
    * Implement NM Task Constraints
    */
   public static class NMTaskConstraints implements TaskConstraints {
+    List<Long> ports;
 
+    public NMTaskConstraints(NodeManagerConfiguration nodeManagerConfiguration) {
+      this.ports = nodeManagerConfiguration.getPorts();
+    }
     @Override
     public int portsCount() {
-      return NMPorts.expectedNumPorts();
+      return this.ports.size();
     }
   }
 }

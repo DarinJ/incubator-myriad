@@ -102,9 +102,6 @@ public class MyriadConfiguration {
   private Boolean checkpoint;
 
   @JsonProperty
-  private MyriadContainerConfiguration containerConfiguration;
-
-  @JsonProperty
   private Double frameworkFailoverTimeout;
 
   @JsonProperty
@@ -182,11 +179,6 @@ public class MyriadConfiguration {
   public Boolean isCheckpoint() {
     return this.checkpoint != null ? checkpoint : DEFAULT_CHECKPOINT;
   }
-
-  public Optional<MyriadContainerConfiguration> getContainerConfiguration() {
-    return Optional.fromNullable(containerConfiguration);
-  }
-
 
   public Double getFrameworkFailoverTimeout() {
     return this.frameworkFailoverTimeout != null ? this.frameworkFailoverTimeout : DEFAULT_FRAMEWORK_FAILOVER_TIMEOUT_MS;
