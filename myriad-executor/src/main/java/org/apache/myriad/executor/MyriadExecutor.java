@@ -19,6 +19,7 @@
 package org.apache.myriad.executor;
 
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Set;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
@@ -40,10 +41,10 @@ public class MyriadExecutor implements Executor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MyriadExecutor.class);
 
-  private Set<String> containerIds;
+  private Map<String, Set<String>> applicationIds;
 
-  public MyriadExecutor(Set<String> containerTaskIds) {
-    this.containerIds = containerTaskIds;
+  public MyriadExecutor(Map<String, Set<String>> containerTaskIds) {
+    this.applicationIds = containerTaskIds;
   }
 
   @Override
@@ -76,8 +77,8 @@ public class MyriadExecutor implements Executor {
     if (!taskId.toString().contains(MyriadExecutorAuxService.YARN_CONTAINER_TASK_ID_PREFIX)) {
       // Inform mesos of killing all tasks corresponding to yarn containers that are
       // currently running 
-      synchronized (containerIds) {
-        for (String containerId : containerIds) {
+      for (Map.Entry<String, Set<String>> entry : applicationIds.entrySet()) {
+        for (String containerId : entry.getValue()) {
           Protos.TaskID containerTaskId = Protos.TaskID.newBuilder().setValue(
               MyriadExecutorAuxService.YARN_CONTAINER_TASK_ID_PREFIX + containerId).build();
           status = TaskStatus.newBuilder().setTaskId(containerTaskId).setState(TaskState.TASK_KILLED).build();
@@ -88,8 +89,7 @@ public class MyriadExecutor implements Executor {
       // Now kill the node manager task
       status = TaskStatus.newBuilder().setTaskId(taskId).setState(TaskState.TASK_KILLED).build();
       driver.sendStatusUpdate(status);
-      LOGGER.info("NodeManager shutdown after receiving" +
-          " KillTask for taskId " + taskId.getValue());
+      LOGGER.info("NodeManager shutdown after receiving" + " KillTask for taskId " + taskId.getValue());
       Runtime.getRuntime().exit(0);
 
     } else {

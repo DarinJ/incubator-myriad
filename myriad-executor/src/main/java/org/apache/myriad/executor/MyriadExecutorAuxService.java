@@ -20,9 +20,10 @@
 package org.apache.myriad.executor;
 
 import java.nio.ByteBuffer;
-import java.util.HashSet;
 import java.util.Set;
-import org.apache.hadoop.yarn.api.records.ContainerId;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.google.common.collect.Sets;
 import org.apache.hadoop.yarn.server.api.ApplicationInitializationContext;
 import org.apache.hadoop.yarn.server.api.ApplicationTerminationContext;
 import org.apache.hadoop.yarn.server.api.AuxiliaryService;
@@ -47,9 +48,10 @@ public class MyriadExecutorAuxService extends AuxiliaryService {
 
   private MesosExecutorDriver driver;
   private Thread myriadExecutorThread;
-  // Storing container id strings as it is difficult to get access to
+
+  // Storing application id and container id strings as it is difficult to get access to
   // NodeManager's NMContext object from an auxiliary service.
-  private Set<String> containerIds = new HashSet<>();
+  private ConcurrentHashMap<String, Set<String>> applicationIds = new ConcurrentHashMap<String, Set<String>>();
 
   protected MyriadExecutorAuxService() {
     super(SERVICE_NAME);
@@ -57,11 +59,12 @@ public class MyriadExecutorAuxService extends AuxiliaryService {
 
   @Override
   protected void serviceStart() throws Exception {
+
     LOGGER.info("Starting MyriadExecutor...");
 
     myriadExecutorThread = new Thread(new Runnable() {
       public void run() {
-        driver = new MesosExecutorDriver(new MyriadExecutor(containerIds));
+        driver = new MesosExecutorDriver(new MyriadExecutor(applicationIds));
         LOGGER.error("MyriadExecutor exit with status " + Integer.toString(driver.run() == Status.DRIVER_STOPPED ? 0 : 1));
       }
     });
@@ -70,12 +73,26 @@ public class MyriadExecutorAuxService extends AuxiliaryService {
 
   @Override
   public void initializeApplication(ApplicationInitializationContext initAppContext) {
-    LOGGER.debug("initializeApplication");
+    Set<String> containers = Sets.newConcurrentHashSet();
+    applicationIds.putIfAbsent(initAppContext.getApplicationId().toString(), containers);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("initializeApplication");
+    }
   }
 
   @Override
   public void stopApplication(ApplicationTerminationContext stopAppContext) {
-    LOGGER.debug("stopApplication");
+    String applicationId = stopAppContext.getApplicationId().toString();
+    System.out.println(applicationId);
+    Set<String> containers = applicationIds.remove((Object) applicationId);
+    if (containers != null) {
+      for (String container: containers) {
+        sendStatus(container, TaskState.TASK_FINISHED);
+      }
+    }
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("stopApplication");
+    }
   }
 
   @Override
@@ -86,28 +103,30 @@ public class MyriadExecutorAuxService extends AuxiliaryService {
 
   @Override
   public void initializeContainer(ContainerInitializationContext initContainerContext) {
-    ContainerId containerId = initContainerContext.getContainerId();
-    synchronized (containerIds) {
-      containerIds.add(containerId.toString());
-    }
+    String containerId = initContainerContext.getContainerId().toString();
+    String applicationId = initContainerContext.getContainerId().getApplicationAttemptId().getApplicationId().toString();
+    applicationIds.get(applicationId).add(containerId);
     sendStatus(containerId, TaskState.TASK_RUNNING);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Received Container init request for appID" + applicationId);
+    }
   }
 
   @Override
   public void stopContainer(ContainerTerminationContext stopContainerContext) {
-    ContainerId containerId = stopContainerContext.getContainerId();
-    synchronized (containerIds) {
-      containerIds.remove(containerId.toString());
+    String containerId = stopContainerContext.getContainerId().toString();
+    String applicationId = stopContainerContext.getContainerId().getApplicationAttemptId().getApplicationId().toString();
+    applicationIds.get(applicationId).remove(containerId);
+    sendStatus(containerId, TaskState.TASK_FINISHED);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Received Container stop request for appID" + applicationId);
     }
-    sendStatus(stopContainerContext.getContainerId(), TaskState.TASK_FINISHED);
   }
 
-  private void sendStatus(ContainerId containerId, TaskState taskState) {
-    Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(YARN_CONTAINER_TASK_ID_PREFIX + containerId.toString()).build();
-
+  private void sendStatus(String containerId, TaskState taskState) {
+    Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(YARN_CONTAINER_TASK_ID_PREFIX + containerId).build();
     TaskStatus status = TaskStatus.newBuilder().setTaskId(taskId).setState(taskState).build();
     driver.sendStatusUpdate(status);
     LOGGER.debug("Sent status " + taskState + " for taskId " + taskId);
   }
-
 }
