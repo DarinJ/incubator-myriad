@@ -21,12 +21,16 @@ package org.apache.myriad.scheduler.yarn.interceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeAddedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeRemovedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeResourceUpdateSchedulerEvent;
@@ -75,6 +79,24 @@ public class CompositeInterceptor implements YarnSchedulerInterceptor, Intercept
         return true;
       }
     };
+  }
+
+  @Override
+  public void beforeReleaseContainers(List<ContainerId> containers, SchedulerApplicationAttempt attempt){
+    if (containers != null && attempt != null) {
+      for (YarnSchedulerInterceptor interceptor : interceptors.values()) {
+        List<ContainerId> filteredContainers = new ArrayList<>();
+        for (ContainerId containerId: containers) {
+          NodeId nodeId = attempt.getRMContainer(containerId).getContainer().getNodeId();
+          if ((nodeId != null && interceptor.getCallBackFilter().allowCallBacksForNode(nodeId))) {
+            filteredContainers.add(containerId);
+          }
+        }
+        if (!filteredContainers.isEmpty()) {
+          interceptor.beforeReleaseContainers(filteredContainers, attempt);
+        }
+      }
+    }
   }
 
   /**

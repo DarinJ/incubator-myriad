@@ -19,12 +19,16 @@
 package org.apache.myriad.scheduler.yarn.interceptor;
 
 import java.io.IOException;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeImpl;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.YarnScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.SchedulerEvent;
 
@@ -55,6 +59,14 @@ public interface YarnSchedulerInterceptor {
    * @return
    */
   public CallBackFilter getCallBackFilter();
+
+  /**
+   * Invoked *before* {@link org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler#releaseContainers(List,
+   * SchedulerApplicationAttempt)}
+   * only if {@link CallBackFilter#allowCallBacksForNode(NodeId)} returns true.
+  */
+
+  public void beforeReleaseContainers(List<ContainerId> containers, SchedulerApplicationAttempt attempt);
 
   /**
    * Invoked *before* {@link AbstractYarnScheduler#reinitialize(Configuration, RMContext)}
