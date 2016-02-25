@@ -20,7 +20,10 @@ package org.apache.myriad.scheduler.yarn;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
@@ -73,6 +76,13 @@ public class MyriadFairScheduler extends FairScheduler {
     yarnSchedulerInterceptor.beforeReleaseContainers(containers, attempt);
     super.releaseContainers(containers, attempt);
   }
+
+  @Override
+  public void completedContainer(RMContainer rmContainer, ContainerStatus containerStatus, RMContainerEventType event) {
+    yarnSchedulerInterceptor.beforeCompletedContainer(rmContainer, containerStatus, event);
+    super.completedContainer(rmContainer, containerStatus, event);
+  }
+
 
   @Override
   public synchronized void serviceInit(Configuration conf) throws Exception {

@@ -20,8 +20,10 @@ package org.apache.myriad.scheduler;
 
 import org.apache.hadoop.yarn.api.records.Resource;
 /**
- + * Small class of Yarn resource utils.
- + */
+ * Small class of Yarn resource utils.  Some methods may be redundant with methods in
+ * org.apache.hadoop.yarn.util.resource.Resources as of 2.7.0 but are here for backwards compatibilty
+ * with 2.6.0
+ */
 public class ResourceUtils {
   public static Resource componentwiseMax(Resource lhs, Resource rhs) {
     int cores = Math.max(lhs.getVirtualCores(), rhs.getVirtualCores());

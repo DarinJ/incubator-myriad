@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNode;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
@@ -104,22 +105,22 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
   }
 
   @Override
-  public synchronized void beforeReleaseContainers(List<ContainerId> containerIds, SchedulerApplicationAttempt attempt) {
-    //TODO (darinj) Reliable messaging
-    LOGGER.info(containerIds.toString());
-    for (ContainerId containerId: containerIds) {
-      RMContainer rmContainer = attempt.getRMContainer(containerId);
-      if (rmContainer != null) {
-        myKillContainer(rmContainer);
-      } else {
-        LOGGER.info("beforeReleaseContainers recieved null container");
-      }
+  public void beforeReleaseContainers(List<ContainerId> containerIds, SchedulerApplicationAttempt attempt) {
+    //NOOP beforeCompletedContainer does this
+  }
+
+  @Override
+  public void beforeCompletedContainer(RMContainer rmContainer, ContainerStatus containerStatus, RMContainerEventType type) {
+    if (type.equals(RMContainerEventType.KILL) || type.equals(RMContainerEventType.RELEASED)) {
+      myKillContainer(rmContainer);
+      LOGGER.info("{} completed with exit status {}, killing cooresponding mesos task.", rmContainer.getContainerId().toString(), type);
     }
   }
 
-  private void myKillContainer(RMContainer rmContainer) {
+  private synchronized void myKillContainer(RMContainer rmContainer) {
     if (rmContainer != null && rmContainer.getContainer() != null) {
       Protos.TaskID taskId = containerToTaskId(rmContainer);
+      //TODO (darinj) Reliable messaging
       state.makeTaskKillable(taskId);
       myriadDriver.kill(taskId);
       String hostname = rmContainer.getContainer().getNodeId().getHost();
@@ -137,7 +138,6 @@ public class YarnNodeCapacityManager extends BaseInterceptor {
       }
     }
   }
-
 
   @Override
   public void afterSchedulerEventHandled(SchedulerEvent event) {

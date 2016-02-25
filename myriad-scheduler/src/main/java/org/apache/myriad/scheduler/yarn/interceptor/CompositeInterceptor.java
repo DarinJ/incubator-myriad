@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
@@ -94,6 +97,17 @@ public class CompositeInterceptor implements YarnSchedulerInterceptor, Intercept
         }
         if (!filteredContainers.isEmpty()) {
           interceptor.beforeReleaseContainers(filteredContainers, attempt);
+        }
+      }
+    }
+  }
+  @Override
+  public void beforeCompletedContainer(RMContainer rmContainer, ContainerStatus containerStatus, RMContainerEventType event) {
+    if (rmContainer != null && rmContainer.getContainer() != null) {
+      NodeId nodeId = rmContainer.getContainer().getNodeId();
+      for (YarnSchedulerInterceptor interceptor : interceptors.values()) {
+        if (interceptor.getCallBackFilter().allowCallBacksForNode(nodeId)) {
+          interceptor.beforeCompletedContainer(rmContainer, containerStatus, event);
         }
       }
     }

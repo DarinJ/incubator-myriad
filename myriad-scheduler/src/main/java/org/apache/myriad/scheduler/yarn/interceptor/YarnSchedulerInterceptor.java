@@ -23,8 +23,11 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
+import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeImpl;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
@@ -69,13 +72,20 @@ public interface YarnSchedulerInterceptor {
   public void beforeReleaseContainers(List<ContainerId> containers, SchedulerApplicationAttempt attempt);
 
   /**
-   * Invoked *before* {@link AbstractYarnScheduler#reinitialize(Configuration, RMContext)}
-   *
-   * @param conf
-   * @param yarnScheduler
-   * @param rmContext
-   * @throws IOException
+   * Invoked *before* {@link org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler#completedContainer(RMContainer,
+   * ContainerStatus, RMContainerEventType)}
+   * only if {@link CallBackFilter#allowCallBacksForNode(NodeId)} returns true.
    */
+  public void beforeCompletedContainer(RMContainer rmContainer, ContainerStatus containerStatus, RMContainerEventType event);
+
+    /**
+     * Invoked *before* {@link AbstractYarnScheduler#reinitialize(Configuration, RMContext)}
+     *
+     * @param conf
+     * @param yarnScheduler
+     * @param rmContext
+     * @throws IOException
+     */
   public void init(Configuration conf, AbstractYarnScheduler yarnScheduler, RMContext rmContext) throws IOException;
 
   /**
