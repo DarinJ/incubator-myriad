@@ -20,14 +20,11 @@ package org.apache.myriad.scheduler;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.DiscreteDomains;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Ranges;
 import com.google.common.collect.Sets;
-import com.google.common.collect.DiscreteDomains;
-
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -77,6 +74,8 @@ public class TaskUtils {
   private static final String PROTOCOL_KEY = "protocol";
   private static final String PARAMETER_KEY_KEY = "key";
   private static final String PARAMETER_VALUE_KEY = "value";
+  public static final String EXECUTOR_NAME = "myriad_task";
+  public static final String EXECUTOR_PREFIX = "myriad_executor";
 
   private MyriadConfiguration cfg;
   Random random = new Random();
@@ -175,14 +174,12 @@ public class TaskUtils {
   }
 
   public double getExecutorCpus() {
-
     return MyriadExecutorDefaults.DEFAULT_CPUS;
   }
 
   public double getExecutorMemory() {
     MyriadExecutorConfiguration executorCfg = this.cfg.getMyriadExecutorConfiguration();
-    return (executorCfg.getJvmMaxMemoryMB().isPresent() ? executorCfg.getJvmMaxMemoryMB()
-        .get() : MyriadExecutorDefaults.DEFAULT_JVM_MAX_MEMORY_MB) * (1 + MyriadExecutorDefaults.JVM_OVERHEAD);
+    return executorCfg.getJvmMaxMemoryMB();
   }
 
   public double getTaskCpus(NMProfile profile) {
@@ -262,45 +259,13 @@ public class TaskUtils {
     });
   }
 
-  public Iterable<Protos.ContainerInfo.DockerInfo.PortMapping> getPortMappings(List<Map<String, String>> portMappings, AbstractPorts ports) {
-    Preconditions.checkNotNull(portMappings, "portMappings is null");
-    Preconditions.checkNotNull(ports, "ports is null");
-    Preconditions.checkArgument(portMappings.size() == ports.size(), "Length Mismatch between portMappings and Ports");
-
-    ArrayList<Protos.ContainerInfo.DockerInfo.PortMapping> portMappingsList = Lists.newArrayList();
-
-    for (int i = 0; i <= ports.size(); i++) {
-      Protos.ContainerInfo.DockerInfo.PortMapping.Builder portMappingBuilder = Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder();
-      Map portMapping = Maps.newHashMap(portMappings.get(i));
-      Preconditions.checkState(portMapping.containsKey(CONTAINER_PORT_KEY));
-      Preconditions.checkState(portMapping.containsKey(HOST_PORT_KEY));
-      Preconditions.checkState(portMapping.containsKey(PROTOCOL_KEY));
-
-      portMappingBuilder.setContainerPort(Integer.parseInt(portMapping.get(CONTAINER_PORT_KEY).toString()));
-      if (Integer.parseInt(portMapping.get(HOST_PORT_KEY).toString()) == 0) {
-        portMappingBuilder.setHostPort((int) ports.get(i).getPort());
-      } else if (Integer.parseInt(portMapping.get(HOST_PORT_KEY).toString()) == ports.get(i).getPort()) {
-        portMappingBuilder.setHostPort(Integer.parseInt(portMapping.get(HOST_PORT_KEY).toString()));
-      } else {
-        throw new RuntimeException("Port Mismatch");
-      }
-      portMappingBuilder.setProtocol(portMapping.get(PROTOCOL_KEY).toString());
-      portMappingsList.add(portMappingBuilder.build());
-    }
-    return portMappingsList;
-  }
-
-  public Protos.ContainerInfo.DockerInfo getDockerInfo(MyriadDockerConfiguration dockerConfiguration, AbstractPorts ports) {
+  public Protos.ContainerInfo.DockerInfo getDockerInfo(MyriadDockerConfiguration dockerConfiguration) {
     Preconditions.checkArgument(dockerConfiguration.getNetwork().equals("host"), "Currently only host networking supported");
-    Protos.ContainerInfo.DockerInfo.Builder dockerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
+    return Protos.ContainerInfo.DockerInfo.newBuilder()
         .setImage(dockerConfiguration.getImage())
         .setNetwork(Protos.ContainerInfo.DockerInfo.Network.valueOf(dockerConfiguration.getNetwork()))
         .setPrivileged(dockerConfiguration.getPrivledged())
-        .addAllParameters(getParameters(dockerConfiguration.getParameters()));
-    if (!dockerConfiguration.getPortMappings().isEmpty()) {
-      dockerBuilder.addAllPortMappings(getPortMappings(dockerConfiguration.getPortMappings(), ports));
-    }
-    return dockerBuilder.build();
+        .addAllParameters(getParameters(dockerConfiguration.getParameters())).build();
   }
 
   /**
@@ -308,18 +273,29 @@ public class TaskUtils {
    *
    * @return ContainerInfo
    */
-  public Protos.ContainerInfo getContainerInfo(AbstractPorts ports) {
+  public Protos.ContainerInfo getContainerInfo() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
     Preconditions.checkArgument(cfg.getContainerConfiguration().isPresent(), "ContainerConfiguration doesn't exist!");
     MyriadContainerConfiguration containerConfiguration = cfg.getContainerConfiguration().get();
     Protos.ContainerInfo.Builder containerBuilder = Protos.ContainerInfo.newBuilder()
-        .setType(Protos.ContainerInfo.Type.valueOf(containerConfiguration.getType()))
+        .setType(containerConfiguration.getType())
         .addAllVolumes(getVolumes(containerConfiguration.getVolumes()));
     if (containerConfiguration.getDockerConfiguration().isPresent()) {
       MyriadDockerConfiguration dockerConfiguration = containerConfiguration.getDockerConfiguration().get();
-      containerBuilder.setDocker(getDockerInfo(dockerConfiguration, ports));
+      containerBuilder.setDocker(getDockerInfo(dockerConfiguration));
     }
     return containerBuilder.build();
   }
+
+  public Protos.ExecutorInfo getExecutorInfoForSlave(Protos.FrameworkID frameworkId, Protos.Offer offer, Protos.CommandInfo commandInfo) {
+    Protos.ExecutorID executorId = Protos.ExecutorID.newBuilder()
+            .setValue(EXECUTOR_PREFIX + frameworkId.getValue() + offer.getId().getValue() + offer.getSlaveId().getValue())
+            .build();
+    return Protos.ExecutorInfo.newBuilder().setCommand(commandInfo).setName(EXECUTOR_NAME).setExecutorId(executorId)
+            .addAllResources(getScalarResource(offer, "cpus", getExecutorCpus(), 0.0))
+            .addAllResources(getScalarResource(offer, "mem", getExecutorMemory(), 0.0))
+            .build();
+  }
+
 
   public AbstractPorts getRandomPortResources(Protos.Offer offer, Integer number, Set<Long> used) {
     AbstractPorts ports = new AbstractPorts(number);

@@ -2,6 +2,7 @@ package org.apache.myriad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
+import org.apache.mesos.Protos;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import java.util.ArrayList;
@@ -26,8 +27,12 @@ public class MyriadContainerConfiguration {
   @JsonProperty
   private List<Map<String, String>> volumes;
 
-  public String getType() {
-    return type;
+  public Protos.ContainerInfo.Type getType() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    if (type != null) {
+      return (Protos.ContainerInfo.Type) Class.forName("Protos.ContainerInfo.Type" + type).newInstance();
+    } else {
+      return Protos.ContainerInfo.Type.DOCKER;
+    }
   }
 
   public Optional<MyriadDockerConfiguration> getDockerConfiguration() {

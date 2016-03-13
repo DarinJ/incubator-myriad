@@ -55,6 +55,13 @@ import org.hibernate.validator.constraints.NotEmpty;
  * jvmMaxMemoryMB: 256
  * path: file://localhost/usr/local/libexec/mesos/myriad-executor-runnable-0.1.0.jar
  * containerConfiguration:
+ *   dockerConfiguration:
+ *     - image: host:port/username/image
+ *     - network: HOST #presently the only networking enabled
+ *     - parameters:
+ *         - {key: key1, value: value1}
+ *         - {key: key2, value: value2}
+ *     - privledged: false
  *   volumes:
  *     -
  *       containerPath: path
@@ -63,7 +70,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  *       containerPath: path
  *       hostPath: path
  * yarnEnvironment:
- * YARN_HOME: /usr/local/hadoop
+ *   - YARN_HOME: /usr/local/hadoop
  */
 public class MyriadConfiguration {
   /**

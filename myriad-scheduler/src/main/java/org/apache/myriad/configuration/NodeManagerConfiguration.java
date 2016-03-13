@@ -25,6 +25,8 @@ import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerDoub
 import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerString;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+import java.util.List;
+
 /**
  * Node Manager Configuration
  */
@@ -52,6 +54,9 @@ public class NodeManagerConfiguration {
   @JsonProperty
   @JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
+
+  @JsonProperty
+  List<Long> ports;
 
   /**
    * Amount of CPU share given to NodeManger JVM. This is critical specially
@@ -89,5 +94,9 @@ public class NodeManagerConfiguration {
 
   public Optional<Boolean> getCgroups() {
     return Optional.fromNullable(cgroups);
+  }
+
+  public List<Long> getPorts() {
+    return ports;
   }
 }

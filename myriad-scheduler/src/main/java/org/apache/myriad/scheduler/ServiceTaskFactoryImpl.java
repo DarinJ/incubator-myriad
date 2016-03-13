@@ -26,13 +26,10 @@ import com.google.common.collect.Lists;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.CommandInfo;
 import org.apache.mesos.Protos.CommandInfo.URI;
-import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Value;
 import org.apache.myriad.configuration.MyriadConfiguration;
 import org.apache.myriad.configuration.MyriadExecutorConfiguration;
 import org.apache.myriad.configuration.ServiceConfiguration;
@@ -113,8 +110,8 @@ public class ServiceTaskFactoryImpl implements TaskFactory {
     taskBuilder.setName(nodeTask.getTaskPrefix()).setTaskId(taskId).setSlaveId(offer.getSlaveId())
         .addAllResources(taskUtils.getScalarResource(offer, "cpus", nodeTask.getProfile().getCpus(), 0.0))
         .addAllResources(taskUtils.getScalarResource(offer, "mem", nodeTask.getProfile().getMemory(), 0.0));
-
-    taskBuilder.setCommand(commandInfo);
+    taskBuilder.setExecutor(taskUtils.getExecutorInfoForSlave(frameworkId, offer, commandInfo));
+    //taskBuilder.setCommand(commandInfo);
     return taskBuilder.build();
   }
 
@@ -167,44 +164,4 @@ public class ServiceTaskFactoryImpl implements TaskFactory {
     return commandInfo.build();
   }
 
-  @Override
-  public ExecutorInfo getExecutorInfoForSlave(FrameworkID frameworkId, Offer offer, CommandInfo commandInfo) {
-    // TODO (yufeldman) if executor specified use it , otherwise return null
-    // nothing to implement here, since we are using default slave executor
-    return null;
-  }
-
-  /**
-   * Helper method to reserve ports
-   *
-   * @param offer
-   * @param requestedPorts
-   * @return
-   */
-  private List<Long> getAvailablePorts(Offer offer, int requestedPorts) {
-    if (requestedPorts == 0) {
-      return null;
-    }
-    final List<Long> returnedPorts = new ArrayList<>();
-    for (Resource resource : offer.getResourcesList()) {
-      if (resource.getName().equals("ports") && (!resource.hasRole() || resource.getRole().equals("*"))) {
-        Iterator<Value.Range> itr = resource.getRanges().getRangeList().iterator();
-        while (itr.hasNext()) {
-          Value.Range range = itr.next();
-          if (range.getBegin() <= range.getEnd()) {
-            long i = range.getBegin();
-            while (i <= range.getEnd() && returnedPorts.size() < requestedPorts) {
-              returnedPorts.add(i);
-              i++;
-            }
-            if (returnedPorts.size() >= requestedPorts) {
-              return returnedPorts;
-            }
-          }
-        }
-      }
-    }
-    // this is actually an error condition - we did not have enough ports to use
-    return returnedPorts;
-  }
 }

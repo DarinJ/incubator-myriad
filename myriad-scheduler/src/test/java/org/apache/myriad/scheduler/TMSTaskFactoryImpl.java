@@ -19,8 +19,6 @@
 package org.apache.myriad.scheduler;
 
 import javax.inject.Inject;
-import org.apache.mesos.Protos.CommandInfo;
-import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.TaskID;
@@ -62,8 +60,4 @@ public class TMSTaskFactoryImpl implements TaskFactory {
     this.taskUtils = taskUtils;
   }
 
-  @Override
-  public ExecutorInfo getExecutorInfoForSlave(FrameworkID frameworkId, Offer offer, CommandInfo commandInfo) {
-    return null;
-  }
 }

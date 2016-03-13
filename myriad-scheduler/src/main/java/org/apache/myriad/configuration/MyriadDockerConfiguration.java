@@ -22,11 +22,10 @@ public class MyriadDockerConfiguration {
   Boolean privledged;
 
   @JsonProperty
-  List<Map<String, String>> portMappings;
-
-  @JsonProperty
   List<Map<String, String>> parameters;
+  @JsonProperty
 
+  @NotEmpty
   public String getImage() {
     return image;
   }
@@ -39,20 +38,7 @@ public class MyriadDockerConfiguration {
     return privledged != null ? privledged : false;
   }
 
-  /**
-   * Requires keys containerPort, hostPort, protocol
-   *
-   * @return
-   */
-  public List<Map<String, String>> getPortMappings() {
-    if (portMappings == null) {
-      return new ArrayList<Map<String, String>>();
-    } else {
-      return portMappings;
-    }
-  }
-
-  public List<Map<String, String>> getParameters() {
+  public Iterable<Map<String, String>> getParameters() {
     if (parameters == null) {
       return new ArrayList<>();
     } else {
