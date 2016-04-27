@@ -37,7 +37,7 @@ Modify the $YARN_HOME/etc/hadoop/myriad-config-default.yml file by adding the fo
 ```
 ...
 nodemanager:
-cgroups: true
+cgroupHierarchy: /path/to/cgroup # default is /sys/fs/cgroup
 ...
 ```
 
@@ -50,20 +50,16 @@ Modify the `$YARN_HOME/etc/hadoop/yarn-site.xml` file by adding the following co
 <property>
 <description>who will execute(launch) the containers.</description>
 <name>yarn.nodemanager.container-executor.class</name>
-<value>${yarn.nodemanager.container-executor.class}</value>
+<value>org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor</value>
 </property>
 <property>
 <description>The class which should help the LCE handle resources.</description>
 <name>yarn.nodemanager.linux-container-executor.resources-handler.class</name>
-<value>${yarn.nodemanager.linux-container-executor.resources-handler.class}</value>
-</property>
-<property>
-<name>yarn.nodemanager.linux-container-executor.cgroups.hierarchy</name>
-<value>${yarn.nodemanager.linux-container-executor.cgroups.hierarchy}</value>
+<value>org.apache.hadoop.yarn.server.nodemanager.util.CgroupsLCEResourcesHandler</value>
 </property>
 <property>
 <name>yarn.nodemanager.linux-container-executor.cgroups.mount</name>
-<value>${yarn.nodemanager.linux-container-executor.cgroups.mount}</value>
+<value>true</value>
 </property>
 <property>
 <name>yarn.nodemanager.linux-container-executor.cgroups.mount-path</name>
@@ -71,7 +67,7 @@ Modify the `$YARN_HOME/etc/hadoop/yarn-site.xml` file by adding the following co
 </property>
 <property>
 <name>yarn.nodemanager.linux-container-executor.group</name>
-<value>${yarn.nodemanager.linux-container-executor.group}</value>
+<value>yarn</value>
 </property>
 <property>
 <name>yarn.nodemanager.linux-container-executor.path</name>

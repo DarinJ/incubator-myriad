@@ -49,7 +49,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  * jvmMaxMemoryMB: 1024
  * user: hduser
  * cpus: 0.2
- * cgroups: false
+ * cgroupHierarchy: /sys/fs/cgroup
  * executor:
  * jvmMaxMemoryMB: 256
  * path: file://localhost/usr/local/libexec/mesos/myriad-executor-runnable-0.1.0.jar
@@ -156,6 +156,8 @@ public class MyriadConfiguration {
   @JsonProperty
   private String mesosAuthenticationSecretFilename;
 
+  @JsonProperty
+  private String cgroupHierarchy;
 
   public MyriadConfiguration() {
   }
@@ -252,4 +254,7 @@ public class MyriadConfiguration {
     return mesosAuthenticationPrincipal;
   }
 
+  public String getCGroupHierarchy() {
+    return cgroupHierarchy == null ? "/sys/fs/cgroup" : cgroupHierarchy;
+  }
 }

@@ -55,4 +55,5 @@ public class MyriadExecutorConfiguration {
   public Optional<String> getNodeManagerUri() {
     return Optional.fromNullable(nodeManagerUri);
   }
+
 }
