@@ -41,7 +41,6 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
    * YARN class to help handle LCE resources
    */
   // TODO (mohit): Should it be configurable ?
-  public static final String KEY_YARN_NM_LCE_CGROUPS_MOUNT_PATH = "yarn.nodemanager.linux-container-executor.cgroups.mount-path";
   public static final String KEY_YARN_NM_LCE_CGROUPS_HIERARCHY = "yarn.nodemanager.linux-container-executor.cgroups.hierachy";
   public static final String KEY_YARN_HOME = "yarn.home";
   public static final String KEY_NM_RESOURCE_CPU_VCORES = "nodemanager.resource.cpu-vcores";
@@ -88,10 +87,7 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
     }
 
     if (cfg.getNodeManagerConfiguration().getCgroups().or(Boolean.FALSE)) {
-      // TODO: Configure hierarchy
-      // TODO: Make it configurable
       addYarnNodemanagerOpt(KEY_YARN_NM_LCE_CGROUPS_HIERARCHY, "mesos/$TASK_DIR");
-      addYarnNodemanagerOpt(KEY_YARN_NM_LCE_CGROUPS_MOUNT_PATH, cfg.getCGroupHierarchy() + "/cpu/mesos/$TASK_DIR");
       if (environment.containsKey("YARN_HOME")) {
         addYarnNodemanagerOpt(KEY_YARN_HOME, environment.get("YARN_HOME"));
       }
@@ -115,17 +111,13 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
     if (cfg.getFrameworkSuperUser().isPresent()) {
       cmdLine.append(" export TASK_DIR=`basename $PWD`&&");
       appendSudo(cmdLine);
-      //The container executor script expects mount-path + / + cpu to exist and permissions rwxr-x---
+      //The container executor script expects mount-path to exist and owned by the yarn user
       //See: https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/NodeManagerCgroups.html
       //If YARN ever moves to cgroup/mem it will be necessary to add a mem version.
-      cmdLine.append(" mkdir -p ");
-      cmdLine.append(cfg.getCGroupHierarchy());
-      cmdLine.append("/cpu/mesos/$TASK_DIR/cpu &&");
       appendSudo(cmdLine);
-      cmdLine.append(" chmod -R 750 ");
-      cmdLine.append(cfg.getCGroupHierarchy());
-      cmdLine.append("/cpu/mesos/$TASK_DIR/cpu &&");
-      cmdLine.append("ls -l " + cfg.getCGroupHierarchy() + "/cpu/mesos/$TASK_DIR &&");
+      cmdLine.append("chown " + cfg.getFrameworkUser().get() + " ");
+      cmdLine.append(cfg.getCGroupPath());
+      cmdLine.append("/cpu/mesos/$TASK_DIR &&");
     } else {
       LOGGER.info("frameworkSuperUser not enabled ignoring cgroup configuration");
     }

@@ -157,7 +157,7 @@ public class MyriadConfiguration {
   private String mesosAuthenticationSecretFilename;
 
   @JsonProperty
-  private String cgroupHierarchy;
+  private String cgroupPath;
 
   public MyriadConfiguration() {
   }
@@ -254,7 +254,7 @@ public class MyriadConfiguration {
     return mesosAuthenticationPrincipal;
   }
 
-  public String getCGroupHierarchy() {
-    return cgroupHierarchy == null ? "/sys/fs/cgroup" : cgroupHierarchy;
+  public String getCGroupPath() {
+    return cgroupPath == null ? "/sys/fs/cgroup" : cgroupPath;
   }
 }

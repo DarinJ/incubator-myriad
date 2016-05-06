@@ -18,15 +18,12 @@
  */
 package org.apache.myriad;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
-
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -86,7 +83,7 @@ public class MesosModule extends AbstractModule {
       credentialBuilder.setPrincipal(mesosAuthenticationPrincipal);
       if (StringUtils.isNotEmpty(mesosAuthenticationSecretFilename)) {
         try {
-          credentialBuilder.setSecret(Files.toString(new File(mesosAuthenticationSecretFilename), Charsets.UTF_8));
+          credentialBuilder.setSecretBytes(ByteString.readFrom(new FileInputStream(mesosAuthenticationSecretFilename)));
         } catch (FileNotFoundException ex) {
           LOGGER.error("Mesos authentication secret file was not found", ex);
           throw new RuntimeException(ex);
