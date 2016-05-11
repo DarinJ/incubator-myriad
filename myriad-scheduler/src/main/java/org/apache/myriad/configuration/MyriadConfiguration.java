@@ -185,6 +185,9 @@ public class MyriadConfiguration {
   @JsonProperty
   private String cgroupPath;
 
+  @JsonProperty
+  private MyriadContainerConfiguration containerInfo;
+
   public MyriadConfiguration() {
   }
 

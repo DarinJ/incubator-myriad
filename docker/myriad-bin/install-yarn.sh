@@ -31,6 +31,10 @@ fi
 HADOOP_TGZ=`basename ${HADOOP_URL}`
 HADOOP_BASENAME=`basename ${HADOOP_URL} .tar.gz`
 export HADOOP_HOME=${HADOOP_HOME:='/usr/local/hadoop'}
+export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:=${HADOOP_HOME}/etc/hadoop}
+
+chown -R root:root /usr/local
+chmod 755 /usr/local
 
 # Extract Hadoop
 echo "Downloading ${HADOOP_TGZ} from ${HADOOP_URL}"
@@ -39,10 +43,10 @@ tar xzf ${HADOOP_TGZ} -C /tmp
 mv /tmp/${HADOOP_BASENAME} ${HADOOP_HOME}
 #Remove tarball
 rm -f ${HADOOP_TGZ}
-
+chown -R root:root ${HADOOP_HOME}
 # Link Mesos Libraries
-echo "export JAVA_HOME=/usr" >> ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh
-echo "export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so" >> ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh
+echo "export JAVA_HOME=/usr" >> ${HADOOP_CONF_DIR}/hadoop-env.sh
+echo "export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so" >> ${HADOOP_CONF_DIR}/hadoop-env.sh
 # Ensure the hadoop-env is executable
-chmod +x ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh
+chmod +x ${HADOOP_CONF_DIR}/hadoop-env.sh
 echo "end of install-yarn.sh script"

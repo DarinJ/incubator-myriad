@@ -17,18 +17,25 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 '
+
 # Put in env defaults if they are missing
+export YARN_USER=${YARN_USER:='yarn'}
+export YARN_GROUP=${YARN_GROUP:='yarn'}
 export HADOOP_GROUP=${HADOOP_GROUP:='hadoop'}
-export HADOOP_USER=${HADOOP_USER:='yarn'}
+export YARN_UID=${USER_UID:='107'}
+export YARN_GID=${YARN_GROUP_GID:='113'}
+export HADOOP_GID=${HADOOP_GROUP_GID='112'}
 export HADOOP_HOME=${HADOOP_HOME:='/usr/local/hadoop'}
-export USER_UID=${USER_UID:='113'}
-export GROUP_UID=${GROUP_GID:='112'}
+export YARN_HOME=${YARN_HOME:=${HADOOP_HOME}}
 
 # Add hduser user
 echo "Creating $HADOOP_USER user.."
-groupadd $HADOOP_GROUP -g ${GROUP_UID}
-useradd $HADOOP_USER -g $HADOOP_GROUP -u ${USER_UID} -s /bin/bash -d /home/${HADOOP_USER}
-mkdir /home/${HADOOP_USER}
-chown -R $HADOOP_USER:$HADOOP_GROUP /home/${HADOOP_USER}
-
-echo "end of create-user.sh script"
+groupadd ${HADOOP_GROUP} -g ${HADOOP_GID}
+groupadd ${YARN_GROUP} -g ${YARN_GID}
+useradd ${YARN_USER} -g ${YARN_GROUP} -G ${HADOOP_GROUP} -u ${YARN_UID} -s /bin/bash -d /home/${YARN_USER}
+mkdir /home/${YARN_USER}
+chown -R $YARN_USER:$YARN_GROUP /home/${YARN_USER}
+echo setting permissions on container-executor
+chown root:${YARN_GROUP} ${YARN_HOME}/bin/container-executor
+chmod 6050 ${YARN_HOME}/bin/container-executor
+echo "end of configure-yarn.sh script"
