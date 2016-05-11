@@ -133,6 +133,12 @@ public interface TaskFactory {
         commandInfo.addUris(jvmUri);
       }
 
+      if (myriadExecutorConfiguration.getConfigUri().isPresent()) {
+        String configURI = myriadExecutorConfiguration.getConfigUri().get();
+        LOGGER.info("Getting Hadoop distribution from: {}", configURI);
+        commandInfo.addUris(URI.newBuilder().setValue(configURI).build());
+      }
+
       if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {
         //Both FrameworkUser and FrameworkSuperuser to get all of the directory permissions correct.
         if (!(cfg.getFrameworkUser().isPresent() && cfg.getFrameworkSuperUser().isPresent())) {
@@ -143,7 +149,7 @@ public interface TaskFactory {
 
         //get the nodemanagerURI
         //We're going to extract ourselves, so setExtract is false
-        LOGGER.info("Getting Hadoop distribution from:" + nodeManagerUri);
+        LOGGER.info("Getting Hadoop distribution from: {}", nodeManagerUri);
         URI nmUri = URI.newBuilder().setValue(nodeManagerUri).setExtract(false).build();
 
         //get configs directly from resource manager
