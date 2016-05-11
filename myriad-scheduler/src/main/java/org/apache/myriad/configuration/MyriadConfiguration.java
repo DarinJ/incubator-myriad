@@ -50,7 +50,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  * jvmMaxMemoryMB: 1024
  * user: hduser
  * cpus: 0.2
- * cgroups: false
+ * cgroupHierarchy: /sys/fs/cgroup
  * executor:
  * jvmMaxMemoryMB: 256
  * path: file://localhost/usr/local/libexec/mesos/myriad-executor-runnable-0.1.0.jar
@@ -111,9 +111,6 @@ public class MyriadConfiguration {
 
   @JsonProperty
   private Boolean checkpoint;
-
-  @JsonProperty
-  private MyriadContainerConfiguration containerInfo;
 
   @JsonProperty
   private Double frameworkFailoverTimeout;
@@ -184,6 +181,9 @@ public class MyriadConfiguration {
 
   @JsonProperty
   private String servedBinaryPath;
+
+  @JsonProperty
+  private String cgroupPath;
 
   public MyriadConfiguration() {
   }
@@ -283,6 +283,9 @@ public class MyriadConfiguration {
     return mesosAuthenticationPrincipal;
   }
 
+  public String getCGroupPath() {
+    return cgroupPath == null ? "/sys/fs/cgroup" : cgroupPath;
+  }
   public Optional<String> getServedConfigPath() {
     return Optional.fromNullable(servedConfigPath);
   }
