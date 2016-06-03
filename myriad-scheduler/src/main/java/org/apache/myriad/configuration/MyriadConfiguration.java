@@ -86,7 +86,7 @@ public class MyriadConfiguration {
   /**
    * By default rebalancer is turned off.
    */
-  public static final Boolean DEFAULT_REBALANCER_ENABLED = false;
+  public static final Boolean DEFAULT_REBALANCER = true;
 
   /**
    * By default ha is turned off.
@@ -105,13 +105,13 @@ public class MyriadConfiguration {
   public static final Integer DEFAULT_ZK_TIMEOUT = 20000;
 
   public static final Integer DEFAULT_REST_API_PORT = 8192;
-  
+
   public static final String DEFAULT_ROLE = "*";
-  
+
   public static final String DEFAULT_ZK_SERVERS = "localhost:2181";
-  
+
   public static final String DEFAULT_CGROUP_PATH = "/sys/fs/cgroup";
-  
+
   public static final Map<String, ServiceConfiguration> EMPTY_SERVICE_CONFIGURATION = Collections.emptyMap();
 
   @JsonProperty
@@ -197,6 +197,8 @@ public class MyriadConfiguration {
   @JsonProperty
   private String cgroupPath;
 
+  @JsonProperty
+  private Boolean cgroupEnabled;
 
   public MyriadConfiguration() {
   }
@@ -220,7 +222,7 @@ public class MyriadConfiguration {
   public String getFrameworkName() {
     return Optional.fromNullable(frameworkName).or(DEFAULT_FRAMEWORK_NAME);
   }
-  
+
   public Double getFrameworkFailoverTimeout() {
     return Optional.fromNullable(frameworkFailoverTimeout).or(DEFAULT_FRAMEWORK_FAILOVER_TIMEOUT_MS);
   }
@@ -304,4 +306,9 @@ public class MyriadConfiguration {
   public String getCGroupPath() {
     return Optional.fromNullable(cgroupPath).or(DEFAULT_CGROUP_PATH);
   }
+
+  public Boolean isCgroupEnabled() {
+    return Optional.fromNullable(cgroupEnabled).or(false);
+  }
+
 }

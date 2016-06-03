@@ -34,7 +34,7 @@ HADOOP_BASENAME=`basename ${HADOOP_URL} .tar.gz`
 
 # Extract Hadoop
 echo "Downloading ${HADOOP_TGZ} from ${HADOOP_URL}"
-wget ${HADOOP_URL}
+curl -O http://archive.cloudera.com/cdh5/redhat/6/x86_64/cdh/cloudera-cdh5.repo /etc/yum.repos.d/cloudera.repo
 tar xzf ${HADOOP_TGZ} -C /tmp
 mv /tmp/${HADOOP_BASENAME} ${HADOOP_HOME}
 #Remove tarball

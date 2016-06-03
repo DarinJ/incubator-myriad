@@ -28,12 +28,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
 import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.configuration.MyriadExecutorConfiguration;
 import org.apache.myriad.configuration.NodeManagerConfiguration;
 import org.apache.myriad.configuration.ServiceConfiguration;
 import org.apache.myriad.policy.LeastAMNodesFirstPolicy;
 import org.apache.myriad.policy.NodeScaleDownPolicy;
-import org.apache.myriad.scheduler.DownloadNMExecutorCLGenImpl;
 import org.apache.myriad.scheduler.ExecutorCommandLineGenerator;
 import org.apache.myriad.scheduler.MyriadDriverManager;
 import org.apache.myriad.scheduler.NMExecutorCLGenImpl;
@@ -159,13 +157,6 @@ public class MyriadModule extends AbstractModule {
   @Provides
   @Singleton
   ExecutorCommandLineGenerator providesCLIGenerator(MyriadConfiguration cfg) {
-    ExecutorCommandLineGenerator cliGenerator = null;
-    MyriadExecutorConfiguration myriadExecutorConfiguration = cfg.getMyriadExecutorConfiguration();
-    if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {
-      cliGenerator = new DownloadNMExecutorCLGenImpl(cfg, myriadExecutorConfiguration.getNodeManagerUri().get());
-    } else {
-      cliGenerator = new NMExecutorCLGenImpl(cfg);
-    }
-    return cliGenerator;
+    return new NMExecutorCLGenImpl(cfg);
   }
 }
