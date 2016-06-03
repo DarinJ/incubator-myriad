@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.mesos.Protos.CommandInfo;
 import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.scheduler.TaskFactory.NMTaskFactoryImpl;
+import org.apache.myriad.configuration.ServiceConfiguration;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,13 +36,15 @@ public class TestServiceCommandLine {
 
   static MyriadConfiguration cfg;
 
+  private static final String msgFormat = System.lineSeparator() + "%s" + System.lineSeparator() + "!="
+      + System.lineSeparator() + "%s";
+  protected static final String CMD_FORMAT = "echo \"%1$s\" && %1$s";
   static String toJHSCompare =
-      "echo \" sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml; " +
-      "export TASK_DIR=`basename $PWD`; sudo  chmod +wx /sys/fs/cgroup/cpu/mesos/$TASK_DIR;" +
-      "sudo -E -u hduser -H  $YARN_HOME/bin/mapred historyserver\"; sudo tar -zxpf hadoop-2.5.0.tar.gz &&  sudo  cp" +
-      " conf /usr/local/hadoop/etc/hadoop/yarn-site.xml; sudo -E -u hduser -H $YARN_HOME/bin/mapred historyserver";
+      " sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml &&  " +
+          "sudo -E -u hduser -H  bin/mapred historyserver";
   static String toCompare =
-      "echo \" sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml;";
+      " sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml &&  " +
+          "sudo -E -u hduser -H  $YARN_HOME/bin/yarn nodemanager";
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -58,32 +60,41 @@ public class TestServiceCommandLine {
 
   @Test
   public void testJHSCommandLineGeneration() throws Exception {
-    ServiceTaskFactoryImpl jhs = new ServiceTaskFactoryImpl(cfg, null);
     String executorCmd = "$YARN_HOME/bin/mapred historyserver";
     ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 10.0, 15.0);
-
-    CommandInfo cInfo = jhs.createCommandInfo(profile, executorCmd);
-    System.out.println(toJHSCompare);
-    System.out.println(cInfo.getValue());
-
-    assertTrue(cInfo.getValue().startsWith(toCompare));
+    ServiceConfiguration serviceConfiguration = cfg.getServiceConfiguration("jobhistory");
+    ServiceCommandLineGenerator serviceCommandLineGenerator = new ServiceCommandLineGenerator(cfg);
+    AbstractPorts ports = new AbstractPorts();
+    ports.add(1L);
+    ports.add(2L);
+    ports.add(3L);
+    CommandInfo cInfo = serviceCommandLineGenerator.generateCommandLine(profile,
+        serviceConfiguration,
+        ports);
+    String testVal =  String.format(CMD_FORMAT, toJHSCompare);
+    assertTrue(String.format(msgFormat, cInfo.getValue(), testVal),
+        cInfo.getValue().equals(testVal));
   }
 
   @Test
   public void testNMCommandLineGeneration() throws Exception {
     Long[] ports = new Long[]{1L, 2L, 3L, 4L};
-    NMPorts nmPorts = new NMPorts(ports);
+    AbstractPorts nmPorts = new AbstractPorts();
+    for (Long port : ports) {
+      nmPorts.add(port);
+    }
 
     ServiceResourceProfile profile = new ExtendedResourceProfile(new NMProfile("nm", 10L, 15L), 3.0, 5.0);
 
-    ExecutorCommandLineGenerator clGenerator = new DownloadNMExecutorCLGenImpl(cfg,
-        "hdfs://namenode:port/dist/hadoop-2.7.0.tar.gz");
-    NMTaskFactoryImpl nms = new NMTaskFactoryImpl(cfg, null, clGenerator);
+    ExecutorCommandLineGenerator clGenerator = new NMExecutorCLGenImpl(cfg);
 
-    CommandInfo cInfo = nms.getCommandInfo(profile, nmPorts);
+    CommandInfo cInfo = clGenerator.generateCommandLine(profile, nmPorts);
+    String testVal =  String.format(CMD_FORMAT, toCompare);
+    System.out.println();
     System.out.println(toCompare);
+    System.out.println(testVal);
     System.out.println(cInfo.getValue());
-    assertTrue(cInfo.getValue().startsWith(toCompare));
-
+    assertTrue(String.format(msgFormat, cInfo.getValue(), testVal),
+        cInfo.getValue().equals(testVal));
   }
 }

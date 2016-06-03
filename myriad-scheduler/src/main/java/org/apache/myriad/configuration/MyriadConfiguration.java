@@ -188,6 +188,9 @@ public class MyriadConfiguration {
   @JsonProperty
   private String cgroupPath;
 
+  @JsonProperty
+  private Boolean cgroupEnabled;
+
   public MyriadConfiguration() {
   }
 
@@ -296,5 +299,9 @@ public class MyriadConfiguration {
 
   public String getCGroupPath() {
     return cgroupPath == null ? "/sys/fs/cgroup" : cgroupPath;
+  }
+
+  public Boolean isCgroupEnabled() {
+    return Optional.fromNullable(cgroupEnabled).or(false);
   }
 }

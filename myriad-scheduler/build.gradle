@@ -64,6 +64,14 @@ processResources {
     dependsOn gulp_build
 }
 
+//Keeping guava at the level of hadoop 2.6.0 so we don't get all the
+//awesomeness in our IDE and fail at runtime.
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.guava:guava:11.0.2'
+    }
+}
+
 sourceSets {
     main {
         resources {

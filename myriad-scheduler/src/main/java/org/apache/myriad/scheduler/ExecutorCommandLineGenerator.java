@@ -19,11 +19,13 @@
 
 package org.apache.myriad.scheduler;
 
+import org.apache.mesos.Protos;
+
 /**
  * Interface to plugin multiple implementations for executor command generation
  */
 public interface ExecutorCommandLineGenerator {
-  String generateCommandLine(ServiceResourceProfile profile, Ports ports);
+  Protos.CommandInfo generateCommandLine(ServiceResourceProfile profile, AbstractPorts ports);
 
   String getConfigurationUrl();
 }

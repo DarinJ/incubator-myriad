@@ -94,7 +94,6 @@ public class MyriadFileSystemRMStateStore extends FileSystemRMStateStore impleme
     }
     return rmState;
   }
-
   @Override
   public synchronized StoreContext loadMyriadState() throws Exception {
     StoreContext sc = null;
@@ -104,7 +103,6 @@ public class MyriadFileSystemRMStateStore extends FileSystemRMStateStore impleme
     }
     return sc;
   }
-
   @Override
   public synchronized void storeMyriadState(StoreContext sc) throws Exception {
     Path myriadStatePath = new Path(myriadPathRoot, MYRIAD_STATE_FILE);
@@ -131,7 +129,6 @@ public class MyriadFileSystemRMStateStore extends FileSystemRMStateStore impleme
     }
   }
 
-  @Override
   public synchronized void removeMyriadState() throws Exception {
     if (fs.exists(myriadPathRoot)) {
       if (!fs.delete(myriadPathRoot, true)) {

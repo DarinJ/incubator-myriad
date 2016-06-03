@@ -20,7 +20,7 @@ package org.apache.myriad.scheduler;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -325,4 +325,64 @@ public class TaskUtils {
     }
     return resources;
   }
+
+  public AbstractPorts getRandomPortResources(Protos.Offer offer, Integer number, Set<Long> used) {
+    AbstractPorts ports = new AbstractPorts(number);
+    ArrayList<Long> allAvailablePorts = Lists.newArrayList();
+    for (Protos.Resource resource : offer.getResourcesList()) {
+      if (resource.hasRanges() && resource.getName().equals("ports") && (!resource.hasRole() || resource.getRole().equals("*"))) {
+        for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
+          allAvailablePorts.addAll(contiguousRange(range.getBegin(), range.getEnd()));
+        }
+      }
+    }
+    allAvailablePorts.removeAll(used);
+    for (int i = 0; i < number; i++) {
+      int portIndex = random.nextInt(allAvailablePorts.size());
+      ports.add(allAvailablePorts.get(portIndex));
+      allAvailablePorts.remove(portIndex);
+    }
+    return ports;
+  }
+
+  public AbstractPorts getPortResources(Protos.Offer offer, List<Long> values, Set<Long> used) {
+    Preconditions.checkState(Sets.intersection(Sets.newHashSet(values), used).isEmpty());
+    AbstractPorts ports = new AbstractPorts(values.size());
+    ArrayList<Long> allAvailablePorts = Lists.newArrayList();
+    for (Protos.Resource resource : offer.getResourcesList()) {
+      if (resource.hasRanges() && resource.getName().equals("ports")) {
+        for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
+          Long begin = range.getBegin();
+          Long end = range.getEnd();
+          for (int i = 0; i < values.size(); i++) {
+            if (values.get(i) >= begin && values.get(i) <= end && resource.hasRole()) {
+              ports.add(i, values.get(i), resource.getRole());
+            } else if (values.get(i) >= begin && values.get(i) <= end) {
+              ports.add(i, values.get(i));
+            } else if (!resource.hasRole() || resource.getRole().equals("*")) {
+              allAvailablePorts.addAll(contiguousRange(begin, end));
+            }
+          }
+        }
+      }
+    }
+    allAvailablePorts.removeAll(used);
+    for (int i = 0; i < values.size(); i++) {
+      if (values.get(i) == 0) {
+        int portIndex = random.nextInt(allAvailablePorts.size());
+        ports.add(allAvailablePorts.get(portIndex));
+        allAvailablePorts.remove(portIndex);
+      }
+    }
+    return ports;
+  }
+
+  private List contiguousRange(long begin, long end) {
+    ArrayList<Long> ret = new ArrayList<>();
+    for (long i = begin; i <= end; i++) {
+      ret.add(i);
+    }
+    return ret;
+  }
+
 }
