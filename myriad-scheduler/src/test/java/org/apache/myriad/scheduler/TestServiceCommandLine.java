@@ -20,12 +20,16 @@ package org.apache.myriad.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.lang.StringUtils;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.CommandInfo;
 import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.scheduler.TaskFactory.NMTaskFactoryImpl;
+import org.apache.myriad.configuration.ServiceConfiguration;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -36,13 +40,15 @@ public class TestServiceCommandLine {
 
   static MyriadConfiguration cfg;
 
+  private static final String msgFormat = System.lineSeparator() + "%s" + System.lineSeparator() + "!="
+      + System.lineSeparator() + "%s";
+  protected static final String CMD_FORMAT = "echo \"%1$s\" && %1$s";
   static String toJHSCompare =
-      "echo \" sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml; " +
-      "export TASK_DIR=`basename $PWD`; sudo  chmod +wx /sys/fs/cgroup/cpu/mesos/$TASK_DIR;" +
-      "sudo -E -u hduser -H  $YARN_HOME/bin/mapred historyserver\"; sudo tar -zxpf hadoop-2.5.0.tar.gz &&  sudo  cp" +
-      " conf /usr/local/hadoop/etc/hadoop/yarn-site.xml; sudo -E -u hduser -H $YARN_HOME/bin/mapred historyserver";
+      " sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp yarnConfiguration /usr/local/hadoop/etc/hadoop/yarn-site.xml &&  " +
+          "sudo -E -u hduser -H  bin/mapred historyserver";
   static String toCompare =
-      "echo \" sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp conf /usr/local/hadoop/etc/hadoop/yarn-site.xml;";
+      " sudo tar -zxpf hadoop-2.7.0.tar.gz &&  sudo  cp yarnConfiguration /usr/local/hadoop/etc/hadoop/yarn-site.xml &&  " +
+          "sudo -E -u hduser -H  $YARN_HOME/bin/yarn nodemanager";
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -58,32 +64,65 @@ public class TestServiceCommandLine {
 
   @Test
   public void testJHSCommandLineGeneration() throws Exception {
-    ServiceTaskFactoryImpl jhs = new ServiceTaskFactoryImpl(cfg, null);
+    final String WEBAPP_ADDRESS = "myriad.mapreduce.jobhistory.webapp.address";
+    final String ADDRESS = "myriad.mapreduce.jobhistory.address";
     String executorCmd = "$YARN_HOME/bin/mapred historyserver";
     ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 10.0, 15.0);
+    ServiceConfiguration serviceConfiguration = cfg.getServiceConfiguration("jobhistory").get();
+    ServiceCommandLineGenerator serviceCommandLineGenerator = new ServiceCommandLineGenerator(cfg);
+    AbstractPorts ports = new AbstractPorts();
+    ports.add(1L);
+    ports.add(2L);
+    ports.add(3L);
 
-    CommandInfo cInfo = jhs.createCommandInfo(profile, executorCmd);
-    System.out.println(toJHSCompare);
-    System.out.println(cInfo.getValue());
+    CommandInfo cInfo = serviceCommandLineGenerator.generateCommandLine(profile,
+        serviceConfiguration,
+        ports);
+    String testVal =  String.format(CMD_FORMAT, toJHSCompare);
+    assertTrue(String.format(msgFormat, cInfo.getValue(), testVal),
+        cInfo.getValue().equals(testVal));
 
-    assertTrue(cInfo.getValue().startsWith(toCompare));
+    List<Protos.Environment.Variable> environmentList = cInfo.getEnvironment().getVariablesList();
+    String yarnOpts = "";
+    for (Protos.Environment.Variable variable: environmentList) {
+      if (variable.getName().equals(ServiceCommandLineGenerator.ENV_HADOOP_OPTS)){
+        yarnOpts = variable.getValue();
+      }
+    }
+    assertTrue("Environment contains " + ServiceCommandLineGenerator.ENV_HADOOP_OPTS, StringUtils.isNotEmpty(yarnOpts));
+    System.out.println(yarnOpts);
+    assertTrue(ServiceCommandLineGenerator.ENV_HADOOP_OPTS + " must contain -D" + WEBAPP_ADDRESS +
+        "=0.0.0.0:3", yarnOpts.contains(WEBAPP_ADDRESS + "=0.0.0.0:3"));
   }
 
   @Test
   public void testNMCommandLineGeneration() throws Exception {
     Long[] ports = new Long[]{1L, 2L, 3L, 4L};
-    NMPorts nmPorts = new NMPorts(ports);
+    AbstractPorts nmPorts = new AbstractPorts();
+    for (Long port : ports) {
+      nmPorts.add(port);
+    }
 
     ServiceResourceProfile profile = new ExtendedResourceProfile(new NMProfile("nm", 10L, 15L), 3.0, 5.0);
 
-    ExecutorCommandLineGenerator clGenerator = new DownloadNMExecutorCLGenImpl(cfg,
-        "hdfs://namenode:port/dist/hadoop-2.7.0.tar.gz");
-    NMTaskFactoryImpl nms = new NMTaskFactoryImpl(cfg, null, clGenerator);
+    ExecutorCommandLineGenerator clGenerator = new NMExecutorCommandLineGenerator(cfg);
 
-    CommandInfo cInfo = nms.getCommandInfo(profile, nmPorts);
-    System.out.println(toCompare);
-    System.out.println(cInfo.getValue());
-    assertTrue(cInfo.getValue().startsWith(toCompare));
+    CommandInfo cInfo = clGenerator.generateCommandLine(profile, null, nmPorts);
+    String testVal =  String.format(CMD_FORMAT, toCompare);
+    assertTrue(String.format(msgFormat, cInfo.getValue(), testVal),
+        cInfo.getValue().equals(testVal));
+
+    List<Protos.Environment.Variable> environmentList = cInfo.getEnvironment().getVariablesList();
+    String yarnOpts = "";
+    for (Protos.Environment.Variable variable: environmentList) {
+      if (variable.getName().equals(NMExecutorCommandLineGenerator.ENV_YARN_NODEMANAGER_OPTS)){
+        yarnOpts = variable.getValue();
+      }
+    }
+    assertTrue("Environment contains " + NMExecutorCommandLineGenerator.ENV_YARN_NODEMANAGER_OPTS, StringUtils.isNotEmpty(yarnOpts));
+    assertTrue(NMExecutorCommandLineGenerator.ENV_YARN_NODEMANAGER_OPTS + " must contain -D" + NMExecutorCommandLineGenerator.KEY_NM_SHUFFLE_PORT +
+        "=4", yarnOpts.contains(NMExecutorCommandLineGenerator.KEY_NM_SHUFFLE_PORT + "=4"));
 
   }
+
 }

@@ -78,14 +78,7 @@ public class MyriadTestModule extends AbstractModule {
   @Provides
   @Singleton
   ExecutorCommandLineGenerator providesCLIGenerator(MyriadConfiguration cfg) {
-    ExecutorCommandLineGenerator cliGenerator = null;
-    MyriadExecutorConfiguration myriadExecutorConfiguration = cfg.getMyriadExecutorConfiguration();
-    if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {
-      cliGenerator = new DownloadNMExecutorCLGenImpl(cfg, myriadExecutorConfiguration.getNodeManagerUri().get());
-    } else {
-      cliGenerator = new NMExecutorCLGenImpl(cfg);
-    }
-    return cliGenerator;
+    return new NMExecutorCommandLineGenerator(cfg);
   }
 
 }
