@@ -20,7 +20,7 @@ package org.apache.myriad.scheduler;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.*;
 
 import java.io.IOException;
 import java.io.InputStream;

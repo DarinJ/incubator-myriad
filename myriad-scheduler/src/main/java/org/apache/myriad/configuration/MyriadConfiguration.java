@@ -18,14 +18,13 @@
  */
 package org.apache.myriad.configuration;
 
-import java.util.Collections;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import java.util.Map;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.hibernate.validator.constraints.NotEmpty;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Optional;
 
 /**
  * Myriad Configuration commonly defined in the YML file
@@ -105,14 +104,6 @@ public class MyriadConfiguration {
   public static final Integer DEFAULT_ZK_TIMEOUT = 20000;
 
   public static final Integer DEFAULT_REST_API_PORT = 8192;
-
-  public static final String DEFAULT_ROLE = "*";
-
-  public static final String DEFAULT_ZK_SERVERS = "localhost:2181";
-
-  public static final String DEFAULT_CGROUP_PATH = "/sys/fs/cgroup";
-
-  public static final Map<String, ServiceConfiguration> EMPTY_SERVICE_CONFIGURATION = Collections.emptyMap();
 
   @JsonProperty
   @NotEmpty
@@ -208,23 +199,23 @@ public class MyriadConfiguration {
   }
 
   public Boolean isCheckpoint() {
-    return Optional.fromNullable(checkpoint).or(DEFAULT_CHECKPOINT);
+    return this.checkpoint != null ? checkpoint : DEFAULT_CHECKPOINT;
   }
 
   public Optional<MyriadContainerConfiguration> getContainerInfo() {
     return Optional.fromNullable(containerInfo);
   }
 
-  public String getFrameworkRole() {
-    return Optional.fromNullable(frameworkRole).or(DEFAULT_ROLE);
+  public Double getFrameworkFailoverTimeout() {
+    return this.frameworkFailoverTimeout != null ? this.frameworkFailoverTimeout : DEFAULT_FRAMEWORK_FAILOVER_TIMEOUT_MS;
   }
 
   public String getFrameworkName() {
-    return Optional.fromNullable(frameworkName).or(DEFAULT_FRAMEWORK_NAME);
+    return Strings.isNullOrEmpty(this.frameworkName) ? DEFAULT_FRAMEWORK_NAME : this.frameworkName;
   }
 
-  public Double getFrameworkFailoverTimeout() {
-    return Optional.fromNullable(frameworkFailoverTimeout).or(DEFAULT_FRAMEWORK_FAILOVER_TIMEOUT_MS);
+  public String getFrameworkRole() {
+    return frameworkRole;
   }
 
   public Optional<String> getFrameworkUser() {
@@ -243,24 +234,27 @@ public class MyriadConfiguration {
     return nmInstances;
   }
 
-  public Boolean isRebalancerEnabled() {
-    return Optional.fromNullable(rebalancer).or(DEFAULT_REBALANCER_ENABLED);
+  public Boolean isRebalancer() {
+    return rebalancer != null ? rebalancer : DEFAULT_REBALANCER;
   }
 
   public Boolean isHAEnabled() {
-    return Optional.fromNullable(haEnabled).or(DEFAULT_HA_ENABLED);
+    return haEnabled != null ? haEnabled : DEFAULT_HA_ENABLED;
   }
 
   public NodeManagerConfiguration getNodeManagerConfiguration() {
-    return nodemanager;
+    return this.nodemanager;
   }
 
   public Map<String, ServiceConfiguration> getServiceConfigurations() {
-    return Optional.fromNullable(services).or(EMPTY_SERVICE_CONFIGURATION);
+    return this.services;
   }
 
-  public Optional<ServiceConfiguration> getServiceConfiguration(String taskName) {
-    return Optional.fromNullable(services.get(taskName));
+  public ServiceConfiguration getServiceConfiguration(String taskName) {
+    if (services == null) {
+      return null;
+    }
+    return this.services.get(taskName);
   }
 
   public MyriadExecutorConfiguration getMyriadExecutorConfiguration() {
@@ -268,19 +262,19 @@ public class MyriadConfiguration {
   }
 
   public String getNativeLibrary() {
-    return Optional.fromNullable(nativeLibrary).or(DEFAULT_NATIVE_LIBRARY);
+    return Strings.isNullOrEmpty(this.nativeLibrary) ? DEFAULT_NATIVE_LIBRARY : this.nativeLibrary;
   }
 
   public String getZkServers() {
-    return Optional.fromNullable(zkServers).or(DEFAULT_ZK_SERVERS);
+    return this.zkServers;
   }
 
   public Integer getZkTimeout() {
-    return Optional.fromNullable(zkTimeout).or(DEFAULT_ZK_TIMEOUT);
+    return this.zkTimeout != null ? this.zkTimeout : DEFAULT_ZK_TIMEOUT;
   }
 
   public Integer getRestApiPort() {
-    return Optional.fromNullable(restApiPort).or(DEFAULT_REST_API_PORT);
+    return this.restApiPort != null ? this.restApiPort : DEFAULT_REST_API_PORT;
   }
 
   public Map<String, String> getYarnEnvironment() {
@@ -304,11 +298,10 @@ public class MyriadConfiguration {
   }
 
   public String getCGroupPath() {
-    return Optional.fromNullable(cgroupPath).or(DEFAULT_CGROUP_PATH);
+    return cgroupPath == null ? "/sys/fs/cgroup" : cgroupPath;
   }
 
   public Boolean isCgroupEnabled() {
     return Optional.fromNullable(cgroupEnabled).or(false);
   }
-
 }

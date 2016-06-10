@@ -19,22 +19,20 @@
 
 package org.apache.myriad.scheduler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.CommandInfo;
 import org.apache.myriad.configuration.MyriadConfiguration;
 import org.apache.myriad.configuration.MyriadExecutorConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.mesos.Protos.CommandInfo;
 
 /**
  * Implementation assumes NM binaries already deployed
@@ -143,18 +141,11 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
 
     StringBuilder yarnOpts = new StringBuilder();
     String rmHostName = System.getProperty(KEY_YARN_RM_HOSTNAME);
-    if (StringUtils.isNotEmpty(rmHostName)) {
-      addYarnNodemanagerOpt(KEY_YARN_RM_HOSTNAME, rmHostName);
 
-    if (StringUtils.isNoneEmpty(rmHostName)) {
+    if (rmHostName != null && !rmHostName.isEmpty()) {
       addYarnNodemanagerOpt(yarnOpts, KEY_YARN_RM_HOSTNAME, rmHostName);
     }
 
-    if (cfg.getNodeManagerConfiguration().getCgroups()) {
-      addYarnNodemanagerOpt(KEY_YARN_NM_LCE_CGROUPS_HIERARCHY, "mesos/$TASK_DIR");
-      if (environment.containsKey("YARN_HOME")) {
-        addYarnNodemanagerOpt(KEY_YARN_HOME, environment.get("YARN_HOME"));
-      }
     if (yarnEnv.containsKey(KEY_YARN_HOME)) {
       addYarnNodemanagerOpt(yarnOpts, KEY_YARN_HOME, yarnEnv.get("YARN_HOME"));
     }
@@ -218,20 +209,19 @@ public class NMExecutorCLGenImpl implements ExecutorCommandLineGenerator {
   @Override
   public String getConfigurationUrl() {
     String httpPolicy = conf.get(TaskFactory.YARN_HTTP_POLICY);
-    String address = StringUtils.EMPTY;
     if (httpPolicy != null && httpPolicy.equals(TaskFactory.YARN_HTTP_POLICY_HTTPS_ONLY)) {
-      address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_WEBAPP_HTTPS_ADDRESS);
-      if (StringUtils.isEmpty(address)) {
+      String address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_WEBAPP_HTTPS_ADDRESS);
+      if (address == null || address.isEmpty()) {
         address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_HOSTNAME) + ":8090";
       }
+      return "https://" + address + "/conf";
     } else {
-      address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_WEBAPP_ADDRESS);
-      if (StringUtils.isEmpty(address)) {
+      String address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_WEBAPP_ADDRESS);
+      if (address == null || address.isEmpty()) {
         address = conf.get(TaskFactory.YARN_RESOURCEMANAGER_HOSTNAME) + ":8088";
       }
+      return "http://" + address + "/conf";
     }
-
-    return "http://" + address + "/conf";
   }
 
   protected void appendDistroExtractionCommands(StringBuilder cmdLine) {

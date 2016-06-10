@@ -18,37 +18,18 @@
  */
 package org.apache.myriad.scheduler;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import org.apache.mesos.Protos.CommandInfo;
-import org.apache.mesos.Protos.CommandInfo.URI;
-import org.apache.mesos.Protos.ExecutorID;
-import org.apache.mesos.Protos.ExecutorInfo;
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Value;
-import org.apache.mesos.Protos.Value.Range;
+import org.apache.mesos.Protos.*;
 import org.apache.myriad.configuration.MyriadConfiguration;
-import org.apache.myriad.configuration.MyriadExecutorConfiguration;
 import org.apache.myriad.state.NodeTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
+import javax.inject.Inject;
+import java.util.*;
+
 
 /**
- * Creates Tasks based upon Mesos offers
+ * Creates Tasks based on mesos offers
  */
 public interface TaskFactory {
 
@@ -81,12 +62,14 @@ public interface TaskFactory {
     private MyriadConfiguration cfg;
     private TaskUtils taskUtils;
     private ExecutorCommandLineGenerator clGenerator;
+    private TaskConstraints constraints;
 
     @Inject
     public NMTaskFactoryImpl(MyriadConfiguration cfg, TaskUtils taskUtils, ExecutorCommandLineGenerator clGenerator) {
       this.cfg = cfg;
       this.taskUtils = taskUtils;
-      this.clGenerator = clGenerator;
+      this.clGenerator = new NMExecutorCLGenImpl(cfg);
+      this.constraints = new NMTaskConstraints();
     }
 
     @Override
