@@ -26,7 +26,6 @@ import java.io.*;
 import java.util.*;
 import org.apache.myriad.configuration.*;
 import org.apache.myriad.scheduler.*;
-import org.apache.myriad.scheduler.TaskFactory.*;
 import org.slf4j.*;
 
 /**
@@ -58,7 +57,7 @@ public class MyriadTestModule extends AbstractModule {
     bind(MyriadConfiguration.class).toInstance(cfg);
 
     MapBinder<String, TaskFactory> mapBinder = MapBinder.newMapBinder(binder(), String.class, TaskFactory.class);
-    mapBinder.addBinding(NodeManagerConfiguration.NM_TASK_PREFIX).to(NMTaskFactoryImpl.class).in(Scopes.SINGLETON);
+    mapBinder.addBinding(NodeManagerConfiguration.NM_TASK_PREFIX).to(NMTaskFactory.class).in(Scopes.SINGLETON);
     Map<String, ServiceConfiguration> auxServicesConfigs = cfg.getServiceConfigurations();
     for (Map.Entry<String, ServiceConfiguration> entry : auxServicesConfigs.entrySet()) {
       String taskFactoryClass = entry.getValue().getTaskFactoryImplName().orNull();
@@ -70,7 +69,7 @@ public class MyriadTestModule extends AbstractModule {
           e.printStackTrace();
         }
       } else {
-        mapBinder.addBinding(entry.getKey()).to(ServiceTaskFactoryImpl.class).in(Scopes.SINGLETON);
+        mapBinder.addBinding(entry.getKey()).to(ServiceTaskFactory.class).in(Scopes.SINGLETON);
       }
     }
   }

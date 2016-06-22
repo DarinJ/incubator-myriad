@@ -38,10 +38,9 @@ import org.apache.myriad.scheduler.NMExecutorCommandLineGenerator;
 import org.apache.myriad.scheduler.NMTaskFactoryAnnotation;
 import org.apache.myriad.scheduler.ReconcileService;
 import org.apache.myriad.scheduler.ServiceProfileManager;
-import org.apache.myriad.scheduler.ServiceTaskFactoryImpl;
-import org.apache.myriad.scheduler.TaskConstraintsManager;
+import org.apache.myriad.scheduler.ServiceTaskFactory;
 import org.apache.myriad.scheduler.TaskFactory;
-import org.apache.myriad.scheduler.TaskFactory.NMTaskFactoryImpl;
+import org.apache.myriad.scheduler.NMTaskFactory;
 import org.apache.myriad.scheduler.fgs.NMHeartBeatHandler;
 import org.apache.myriad.scheduler.fgs.NodeStore;
 import org.apache.myriad.scheduler.fgs.OfferLifecycleManager;
@@ -90,17 +89,16 @@ public class MyriadModule extends AbstractModule {
     bind(ReconcileService.class).in(Scopes.SINGLETON);
     bind(HttpConnectorProvider.class).in(Scopes.SINGLETON);
     bind(MyriadWebServer.class).in(Scopes.SINGLETON);
-    bind(TaskConstraintsManager.class).in(Scopes.SINGLETON);
-    // add special binding between TaskFactory and NMTaskFactoryImpl to ease up
+    // add special binding between TaskFactory and NMTaskFactory to ease up
     // usage of TaskFactory
-    bind(TaskFactory.class).annotatedWith(NMTaskFactoryAnnotation.class).to(NMTaskFactoryImpl.class);
+    bind(TaskFactory.class).annotatedWith(NMTaskFactoryAnnotation.class).to(NMTaskFactory.class);
     bind(YarnNodeCapacityManager.class).in(Scopes.SINGLETON);
     bind(NodeStore.class).in(Scopes.SINGLETON);
     bind(OfferLifecycleManager.class).in(Scopes.SINGLETON);
     bind(NMHeartBeatHandler.class).asEagerSingleton();
 
     MapBinder<String, TaskFactory> mapBinder = MapBinder.newMapBinder(binder(), String.class, TaskFactory.class);
-    mapBinder.addBinding(NodeManagerConfiguration.NM_TASK_PREFIX).to(NMTaskFactoryImpl.class).in(Scopes.SINGLETON);
+    mapBinder.addBinding(NodeManagerConfiguration.NM_TASK_PREFIX).to(NMTaskFactory.class).in(Scopes.SINGLETON);
 
     Map<String, ServiceConfiguration> auxServicesConfigs = cfg.getServiceConfigurations();
     for (Map.Entry<String, ServiceConfiguration> entry : auxServicesConfigs.entrySet()) {
@@ -114,7 +112,7 @@ public class MyriadModule extends AbstractModule {
         }
       } else {
         //TODO (kjyost) Confirm if this else statement and logic should still be here
-        mapBinder.addBinding(entry.getKey()).to(ServiceTaskFactoryImpl.class).in(Scopes.SINGLETON);
+        mapBinder.addBinding(entry.getKey()).to(ServiceTaskFactory.class).in(Scopes.SINGLETON);
       }
     }
 

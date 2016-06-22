@@ -19,6 +19,7 @@
 package org.apache.myriad.configuration;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -131,8 +132,8 @@ public class ServiceConfiguration {
     return envSettings;
   }
 
-  public Optional<Map<String, Long>> getPorts() {
-    return Optional.fromNullable(ports);
+  public Map<String, Long> getPorts() {
+    return Optional.fromNullable(ports).or(new TreeMap<String, Long>());
   }
 
   public Optional<Integer> getMaxInstances() {

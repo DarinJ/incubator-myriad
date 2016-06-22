@@ -25,10 +25,18 @@ import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerDoub
 import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerString;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 /**
  * YARN NodeManager Configuration
  */
 public class NodeManagerConfiguration {
+
+  public static final String KEY_NM_ADDRESS = "myriad.yarn.nodemanager.address";
+  public static final String KEY_NM_LOCALIZER_ADDRESS = "myriad.yarn.nodemanager.localizer.address";
+  public static final String KEY_NM_WEBAPP_ADDRESS = "myriad.yarn.nodemanager.webapp.address";
+  public static final String KEY_NM_SHUFFLE_PORT = "myriad.mapreduce.shuffle.port";
   /**
    * Allot 10% more memory to account for JVM overhead.
    */
@@ -75,7 +83,10 @@ public class NodeManagerConfiguration {
   @JsonProperty
   @JsonSerialize(using = OptionalSerializerString.class)
   private String jvmOpts;
-  
+
+  @JsonProperty
+  private Map<String, Long> ports;
+
   /**
    * Determines if cgroups are enabled for the NodeManager
    */
@@ -97,6 +108,18 @@ public class NodeManagerConfiguration {
   
   public Double getCpus() {
     return Optional.fromNullable(cpus).or(DEFAULT_NM_CPUS);
+  }
+
+  public synchronized Map<String, Long> getPorts() {
+    if (ports == null) {
+      //Good idea to have deterministic order
+      ports = new TreeMap<>();
+      ports.put(KEY_NM_ADDRESS, 0L);
+      ports.put(KEY_NM_WEBAPP_ADDRESS, 0L);
+      ports.put(KEY_NM_LOCALIZER_ADDRESS, 0L);
+      ports.put(KEY_NM_SHUFFLE_PORT, 0L);
+    }
+    return ports;
   }
 
   public boolean getCgroups() {

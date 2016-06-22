@@ -19,21 +19,19 @@ package org.apache.myriad.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
-import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.mesos.Protos;
-import org.apache.myriad.configuration.MyriadBadConfigurationException;
 import org.apache.myriad.configuration.MyriadConfiguration;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.HashMap;
+
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for TaskUtils
@@ -62,33 +60,13 @@ public class TestTaskUtils {
   }
 
   @Test
-  public void testGetResource() {
-    TaskUtils taskUtils = new TaskUtils(cfg);
-
-    NMProfile fooProfile = new NMProfile("abc", 1L, 1000L);
-    try {
-      taskUtils.getAuxTaskCpus(fooProfile, "foo");
-      fail("Should not complete sucessfully for foo");
-    } catch (MyriadBadConfigurationException e) {
-      // success
-    }
-
-    try {
-      double cpu = taskUtils.getAuxTaskCpus(fooProfile, "jobhistory");
-      assertTrue(cpu > 0.0);
-    } catch (MyriadBadConfigurationException e) {
-      fail("cpu should be defined for jobhistory");
-    }
-  }
-
-  @Test
   public void testServiceResourceProfile() throws Exception {
     // testing custom deserializer
 
     Gson gson = new GsonBuilder().registerTypeAdapter(ServiceResourceProfile.class, new ServiceResourceProfile.CustomDeserializer())
         .create();
 
-    ServiceResourceProfile parentProfile = new ServiceResourceProfile("abc", 1.0, 100.0);
+    ServiceResourceProfile parentProfile = new ServiceResourceProfile("abc", 1.0, 100.0, new HashMap<String, Long>());
 
     String parentStr = gson.toJson(parentProfile);
     ServiceResourceProfile processedProfile = gson.fromJson(parentStr, ServiceResourceProfile.class);
@@ -96,7 +74,8 @@ public class TestTaskUtils {
     assertTrue(processedProfile.getClass().equals(ServiceResourceProfile.class));
     assertTrue(processedProfile.toString().equalsIgnoreCase(parentStr));
 
-    ServiceResourceProfile childProfile = new ExtendedResourceProfile(new NMProfile("bcd", 5L, 15L), 2.0, 7.0);
+    ServiceResourceProfile childProfile = new ExtendedResourceProfile(new NMProfile("bcd", 5L, 15L), 2.0, 7.0,
+        cfg.getNodeManagerConfiguration().getPorts());
 
     String childStr = gson.toJson(childProfile);
     ServiceResourceProfile processedChildProfile = gson.fromJson(childStr, ServiceResourceProfile.class);
@@ -209,39 +188,4 @@ public class TestTaskUtils {
     checkResourceList(taskUtils.getScalarResource(createScalarOffer("cpus", 0.0, 2.0), "cpus", 0.5, 1.5), "cpus", 0.0, 0.5);
   }
 
-  @Test
-  public void testGetPortResourcesWithRole() {
-    TaskUtils taskUtils = new TaskUtils(cfgWithRole);
-    AbstractPorts ports1 = taskUtils.getPortResources(createRangeOffer("ports"), Lists.newArrayList(0L, 0L, 0L), Sets.newHashSet(501L, 502L));
-    assertTrue(ports1.size() == 3);
-    AbstractPorts ports2 = taskUtils.getPortResources(createRangeOffer("ports"), Lists.newArrayList(1001L, 1002L, 0L), Sets.newHashSet(1003L, 1004L));
-    assertTrue(ports2.size() == 3);
-    assertTrue(ports2.get(0).getPort() == 1001L);
-    assertTrue(ports2.get(0).getRole().get().equals("test"));
-    assertTrue(ports2.get(1).getPort() == 1002L);
-    assertTrue(ports2.get(1).getRole().get().equals("test"));
-    assertTrue(!ports2.get(2).getRole().or("*").equals("test"));
-  }
-
-  @Test
-  public void testContainerInfo() {
-    TaskUtils taskUtils = new TaskUtils(cfgWithDocker);
-    Protos.ContainerInfo containerInfo = taskUtils.getContainerInfo();
-    assertTrue("The container should have a docker", containerInfo.hasDocker());
-    assertTrue("There should be two volumes", containerInfo.getVolumesCount() == 2);
-    assertTrue("The first volume should be read only", containerInfo.getVolumes(0).getMode().equals(Protos.Volume.Mode.RO));
-    assertTrue("The first volume should be read write", containerInfo.getVolumes(1).getMode().equals(Protos.Volume.Mode.RW));
-  }
-
-  @Test public void testDockerInfo() {
-    TaskUtils taskUtils = new TaskUtils(cfgWithDocker);
-    Protos.ContainerInfo containerInfo = taskUtils.getContainerInfo();
-    assertTrue("The container should have a docker", containerInfo.hasDocker());
-    assertTrue("There should be two volumes", containerInfo.getVolumesList().size() == 2);
-    assertTrue("There should be a docker image", containerInfo.getDocker().hasImage());
-    assertTrue("The docker image should be mesos/myraid", containerInfo.getDocker().getImage().equals("mesos/myriad"));
-    assertTrue("Should be using host networking", containerInfo.getDocker().getNetwork().equals(Protos.ContainerInfo.DockerInfo.Network.HOST));
-    assertTrue("There should be two parameters", containerInfo.getDocker().getParametersList().size() == 2);
-    assertTrue("Privledged mode should be false", containerInfo.getDocker().getPrivileged() == false);
-  }
 }

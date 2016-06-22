@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -54,7 +55,7 @@ public abstract class ExecutorCommandLineGenerator {
   protected MyriadExecutorConfiguration myriadExecutorConfiguration;
   protected YarnConfiguration yarnConfiguration = new YarnConfiguration();
 
-  abstract Protos.CommandInfo generateCommandLine(ServiceResourceProfile profile, ServiceConfiguration serviceConfiguration, AbstractPorts ports);
+  abstract Protos.CommandInfo generateCommandLine(ServiceResourceProfile profile, ServiceConfiguration serviceConfiguration, Collection<Long> ports);
 
   protected void appendDistroExtractionCommands(StringBuilder cmdLine) {
     /*
@@ -148,7 +149,11 @@ public abstract class ExecutorCommandLineGenerator {
     }
     if (myriadExecutorConfiguration.getConfigUri().isPresent()) {
       String configURI = myriadExecutorConfiguration.getConfigUri().get();
-      LOGGER.info("Getting Hadoop distribution from: {}", configURI);
+      LOGGER.info("Getting Hadoop configuration from: {}", configURI);
+      uris.add(Protos.CommandInfo.URI.newBuilder().setValue(configURI).build());
+    } else if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {
+      String configURI = getConfigurationUrl();
+      LOGGER.info("Getting Hadoop configuration from: {}", configURI);
       uris.add(Protos.CommandInfo.URI.newBuilder().setValue(configURI).build());
     }
     if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {

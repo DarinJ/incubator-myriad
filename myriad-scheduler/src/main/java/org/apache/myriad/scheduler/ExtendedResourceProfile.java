@@ -20,6 +20,8 @@ package org.apache.myriad.scheduler;
 
 import com.google.gson.Gson;
 
+import java.util.Map;
+
 /**
  * Extended ServiceResourceProfile for services that need to pass set of resources downstream
  * currently the only such service is NodeManager
@@ -33,18 +35,10 @@ public class ExtendedResourceProfile extends ServiceResourceProfile {
    * @param cpu
    * @param mem          will throw NullPoiterException if childProfile is null
    */
-  public ExtendedResourceProfile(NMProfile childProfile, Double cpu, Double mem) {
-    super(childProfile.getName(), cpu, mem);
+  public ExtendedResourceProfile(NMProfile childProfile, Double cpu, Double mem, Map<String, Long> ports) {
+    super(childProfile.getName(), cpu, mem, ports);
     this.childProfile = childProfile;
     this.className = ExtendedResourceProfile.class.getName();
-  }
-
-  public NMProfile getChildProfile() {
-    return childProfile;
-  }
-
-  public void setChildProfile(NMProfile nmProfile) {
-    this.childProfile = nmProfile;
   }
 
   @Override

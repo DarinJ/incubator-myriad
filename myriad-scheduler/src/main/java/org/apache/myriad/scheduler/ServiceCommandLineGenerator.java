@@ -18,13 +18,15 @@
 package org.apache.myriad.scheduler;
 
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import org.apache.mesos.Protos;
 import org.apache.myriad.configuration.MyriadConfiguration;
 import org.apache.myriad.configuration.ServiceConfiguration;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -57,15 +59,15 @@ public class ServiceCommandLineGenerator extends ExecutorCommandLineGenerator {
   @Override
   public Protos.CommandInfo generateCommandLine(ServiceResourceProfile profile,
                                                 ServiceConfiguration serviceConfiguration,
-                                                AbstractPorts ports) {
+                                                Collection<Long> ports) {
     Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder();
     builder.mergeFrom(staticCommandInfo);
     builder.setValue(String.format(CMD_FORMAT, baseCmd + " " + serviceConfiguration.getCommand().get()));
-    builder.setEnvironment(generateEnvironment(serviceConfiguration, ports));
+    builder.setEnvironment(generateEnvironment(profile, ports));
     return builder.build();
   }
 
-  protected Protos.Environment generateEnvironment(ServiceConfiguration serviceConfiguration, AbstractPorts ports) {
+  protected Protos.Environment generateEnvironment(ServiceResourceProfile serviceResourceProfile, Collection<Long> ports) {
     Map<String, String> yarnEnv = myriadConfiguration.getYarnEnvironment();
     Protos.Environment.Builder builder = Protos.Environment.newBuilder();
 
@@ -86,11 +88,11 @@ public class ServiceCommandLineGenerator extends ExecutorCommandLineGenerator {
       addJavaOpt(hadoopOpts, KEY_YARN_HOME, yarnEnv.get("YARN_HOME"));
     }
 
-    Map<String, Long> portsMap = serviceConfiguration.getPorts().or(new HashMap<String, Long>());
-    int i = 0;
+    Map<String, Long> portsMap = serviceResourceProfile.getPorts();
+    Preconditions.checkState(portsMap.size() == ports.size());
+    Iterator itr = ports.iterator();
     for (String portProperty : portsMap.keySet()) {
-      addJavaOpt(hadoopOpts, portProperty, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(i).getPort()));
-      i++;
+      addJavaOpt(hadoopOpts, portProperty, ALL_LOCAL_IPV4ADDR + itr.next());
     }
 
     if (myriadConfiguration.getYarnEnvironment().containsKey(ENV_HADOOP_OPTS)) {

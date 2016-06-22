@@ -29,7 +29,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertTrue;
 
@@ -37,6 +37,16 @@ import static org.junit.Assert.assertTrue;
  * Class to test CommandLine generation
  */
 public class TestServiceCommandLine {
+
+  public static final String KEY_NM_ADDRESS = "myriad.yarn.nodemanager.address";
+  public static final String KEY_NM_LOCALIZER_ADDRESS = "myriad.yarn.nodemanager.localizer.address";
+  public static final String KEY_NM_WEBAPP_ADDRESS = "myriad.yarn.nodemanager.webapp.address";
+  public static final String KEY_NM_SHUFFLE_PORT = "myriad.mapreduce.shuffle.port";
+
+  public static final String KEY_JHS_WEBAPP_ADDRESS = "myriad.mapreduce.jobhistory.webapp.address";
+  public static final String KEY_JHS_ADMIN_ADDRESS = "myriad.mapreduce.jobhistory.admin.address";
+  public static final String KEY_JHS_ADDRESS = "myriad.mapreduce.jobhistory.address";
+
 
   static MyriadConfiguration cfg;
 
@@ -64,15 +74,17 @@ public class TestServiceCommandLine {
 
   @Test
   public void testJHSCommandLineGeneration() throws Exception {
-    final String WEBAPP_ADDRESS = "myriad.mapreduce.jobhistory.webapp.address";
-    final String ADDRESS = "myriad.mapreduce.jobhistory.address";
-    String executorCmd = "$YARN_HOME/bin/mapred historyserver";
-    ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 10.0, 15.0);
+    Map<String, Long> portsMap = new TreeMap<>();
+    portsMap.put(KEY_JHS_ADDRESS, 0L);
+    portsMap.put(KEY_JHS_WEBAPP_ADDRESS, 3L);
+    portsMap.put(KEY_JHS_ADMIN_ADDRESS, 0L);
+
+    ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 10.0, 15.0, portsMap);
     ServiceConfiguration serviceConfiguration = cfg.getServiceConfiguration("jobhistory").get();
     ServiceCommandLineGenerator serviceCommandLineGenerator = new ServiceCommandLineGenerator(cfg);
-    AbstractPorts ports = new AbstractPorts();
-    ports.add(1L);
+    List<Long> ports = new ArrayList<>();
     ports.add(2L);
+    ports.add(1L);
     ports.add(3L);
 
     CommandInfo cInfo = serviceCommandLineGenerator.generateCommandLine(profile,
@@ -91,19 +103,21 @@ public class TestServiceCommandLine {
     }
     assertTrue("Environment contains " + ServiceCommandLineGenerator.ENV_HADOOP_OPTS, StringUtils.isNotEmpty(yarnOpts));
     System.out.println(yarnOpts);
-    assertTrue(ServiceCommandLineGenerator.ENV_HADOOP_OPTS + " must contain -D" + WEBAPP_ADDRESS +
-        "=0.0.0.0:3", yarnOpts.contains(WEBAPP_ADDRESS + "=0.0.0.0:3"));
+    assertTrue(ServiceCommandLineGenerator.ENV_HADOOP_OPTS + " must contain -D" + KEY_JHS_WEBAPP_ADDRESS +
+        "=0.0.0.0:3", yarnOpts.contains(KEY_JHS_WEBAPP_ADDRESS + "=0.0.0.0:3"));
   }
 
   @Test
   public void testNMCommandLineGeneration() throws Exception {
     Long[] ports = new Long[]{1L, 2L, 3L, 4L};
-    AbstractPorts nmPorts = new AbstractPorts();
-    for (Long port : ports) {
-      nmPorts.add(port);
-    }
+    List<Long> nmPorts = Arrays.asList(ports);
+    Map<String, Long> portsMap = new TreeMap<>();
+    portsMap.put(KEY_NM_ADDRESS, 0L);
+    portsMap.put(KEY_NM_WEBAPP_ADDRESS, 0L);
+    portsMap.put(KEY_NM_LOCALIZER_ADDRESS, 0L);
+    portsMap.put(KEY_NM_SHUFFLE_PORT, 0L);
 
-    ServiceResourceProfile profile = new ExtendedResourceProfile(new NMProfile("nm", 10L, 15L), 3.0, 5.0);
+    ServiceResourceProfile profile = new ExtendedResourceProfile(new NMProfile("nm", 10L, 15L), 3.0, 5.0, portsMap);
 
     ExecutorCommandLineGenerator clGenerator = new NMExecutorCommandLineGenerator(cfg);
 
@@ -119,10 +133,10 @@ public class TestServiceCommandLine {
         yarnOpts = variable.getValue();
       }
     }
+    System.out.println(yarnOpts);
     assertTrue("Environment contains " + NMExecutorCommandLineGenerator.ENV_YARN_NODEMANAGER_OPTS, StringUtils.isNotEmpty(yarnOpts));
     assertTrue(NMExecutorCommandLineGenerator.ENV_YARN_NODEMANAGER_OPTS + " must contain -D" + NMExecutorCommandLineGenerator.KEY_NM_SHUFFLE_PORT +
-        "=4", yarnOpts.contains(NMExecutorCommandLineGenerator.KEY_NM_SHUFFLE_PORT + "=4"));
-
+        "=1", yarnOpts.contains(NMExecutorCommandLineGenerator.KEY_NM_SHUFFLE_PORT + "=1"));
   }
 
 }

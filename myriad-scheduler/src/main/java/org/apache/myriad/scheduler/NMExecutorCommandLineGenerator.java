@@ -20,12 +20,15 @@
 package org.apache.myriad.scheduler;
 
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 
 
 
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.mesos.Protos;
@@ -62,7 +65,7 @@ public class NMExecutorCommandLineGenerator extends ExecutorCommandLineGenerator
 
   @Override
   CommandInfo generateCommandLine(ServiceResourceProfile profile,
-                                  ServiceConfiguration serviceConfiguration, AbstractPorts ports) {
+                                  ServiceConfiguration serviceConfiguration, Collection<Long> ports) {
     CommandInfo.Builder builder = CommandInfo.newBuilder();
     builder.mergeFrom(staticCommandInfo);
     builder.setEnvironment(generateEnvironment(profile, ports));
@@ -83,7 +86,7 @@ public class NMExecutorCommandLineGenerator extends ExecutorCommandLineGenerator
     staticCommandInfo = builder.build();
   }
 
-  protected Protos.Environment generateEnvironment(ServiceResourceProfile profile, AbstractPorts ports) {
+  protected Protos.Environment generateEnvironment(ServiceResourceProfile profile, Collection<Long> ports) {
     Map<String, String> yarnEnv = myriadConfiguration.getYarnEnvironment();
     Protos.Environment.Builder builder = Protos.Environment.newBuilder();
     builder.addAllVariables(Iterables.transform(yarnEnv.entrySet(), new Function<Map.Entry<String, String>, Protos.Environment.Variable>() {
@@ -107,10 +110,20 @@ public class NMExecutorCommandLineGenerator extends ExecutorCommandLineGenerator
     addJavaOpt(yarnOpts, KEY_YARN_NM_LCE_CGROUPS_HIERARCHY, "mesos/$TASK_DIR");
     addJavaOpt(yarnOpts, KEY_NM_RESOURCE_CPU_VCORES, Integer.toString(profile.getCpus().intValue()));
     addJavaOpt(yarnOpts, KEY_NM_RESOURCE_MEM_MB, Integer.toString(profile.getMemory().intValue()));
-    addJavaOpt(yarnOpts, KEY_NM_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(0).getPort()));
-    addJavaOpt(yarnOpts, KEY_NM_LOCALIZER_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(1).getPort()));
-    addJavaOpt(yarnOpts, KEY_NM_WEBAPP_ADDRESS, ALL_LOCAL_IPV4ADDR + Long.toString(ports.get(2).getPort()));
-    addJavaOpt(yarnOpts, KEY_NM_SHUFFLE_PORT, Long.toString(ports.get(3).getPort()));
+    Map<String, Long> portsMap = profile.getPorts();
+    Preconditions.checkState(portsMap.size() == ports.size());
+
+    Iterator itr = ports.iterator();
+    for (String portProperty : portsMap.keySet()) {
+      if (portProperty.endsWith("address")) {
+        addJavaOpt(yarnOpts, portProperty, ALL_LOCAL_IPV4ADDR + itr.next());
+      } else if (portProperty.endsWith("port")) {
+        addJavaOpt(yarnOpts, portProperty, itr.next().toString());
+      } else {
+        LOGGER.warn("{} propery isn't an address or port!", portProperty);
+      }
+    }
+
 
     if (myriadConfiguration.getYarnEnvironment().containsKey(ENV_YARN_NODEMANAGER_OPTS)) {
       yarnOpts.append(" ").append(yarnEnv.get(ENV_YARN_NODEMANAGER_OPTS));

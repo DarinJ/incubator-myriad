@@ -24,6 +24,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import java.lang.reflect.Type;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,10 +52,13 @@ public class ServiceResourceProfile {
 
   protected String className;
 
-  public ServiceResourceProfile(String name, Double cpu, Double mem) {
+  protected Map<String, Long> ports;
+
+  public ServiceResourceProfile(String name, Double cpu, Double mem, Map<String, Long> ports) {
     this.name = name;
     this.cpus = cpu;
     this.memory = mem;
+    this.ports = ports;
     this.className = ServiceResourceProfile.class.getName();
   }
 
@@ -82,18 +87,13 @@ public class ServiceResourceProfile {
     return executorCpu;
   }
 
-  public void setExecutorCpu(Double executorCpu) {
-    this.executorCpu = executorCpu;
-  }
-
   public Double getExecutorMemory() {
     return executorMemory;
   }
 
-  public void setExecutorMemory(Double executorMemory) {
-    this.executorMemory = executorMemory;
+  public Map<String, Long> getPorts() {
+    return ports;
   }
-
 
   @Override
   public String toString() {

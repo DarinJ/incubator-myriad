@@ -20,34 +20,24 @@ package org.apache.myriad.scheduler.event.handlers;
 
 import com.google.common.collect.Sets;
 import com.lmax.disruptor.EventHandler;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.myriad.scheduler.SchedulerUtils;
-import org.apache.myriad.scheduler.ServiceResourceProfile;
-import org.apache.myriad.scheduler.TaskConstraints;
-import org.apache.myriad.scheduler.TaskConstraintsManager;
-import org.apache.myriad.scheduler.TaskFactory;
-import org.apache.myriad.scheduler.TaskUtils;
+import org.apache.myriad.scheduler.*;
 import org.apache.myriad.scheduler.constraints.Constraint;
 import org.apache.myriad.scheduler.constraints.LikeConstraint;
 import org.apache.myriad.scheduler.event.ResourceOffersEvent;
 import org.apache.myriad.scheduler.fgs.OfferLifecycleManager;
+import org.apache.myriad.scheduler.resource.ResourceOfferContainer;
 import org.apache.myriad.state.NodeTask;
 import org.apache.myriad.state.SchedulerState;
 import org.slf4j.Logger;
@@ -66,6 +56,7 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
   private static final String RESOURCES_PORTS_KEY = "ports";
   private static final String RESOURCES_DISK_KEY = "disk";
 
+  Random random = new Random();
 
   @Inject
   private SchedulerState schedulerState;
@@ -79,8 +70,6 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
   @Inject
   private OfferLifecycleManager offerLifecycleMgr;
 
-  @Inject
-  private TaskConstraintsManager taskConstraintsManager;
 
   @Override
   public void onEvent(ResourceOffersEvent event, long sequence, boolean endOfBatch) throws Exception {
@@ -128,19 +117,16 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
             launchedTasks.addAll(schedulerState.getActiveTasksByType(taskPrefix));
             launchedTasks.addAll(schedulerState.getStagingTasksByType(taskPrefix));
 
-            if (matches(offer, taskToLaunch, constraint) && SchedulerUtils.isUniqueHostname(offer, taskToLaunch, launchedTasks)) {
+            ResourceOfferContainer resourceOfferContainer = new ResourceOfferContainer(offer, taskToLaunch.getProfile());
+            if (SchedulerUtils.isUniqueHostname(offer, taskToLaunch, launchedTasks)
+                && resourceOfferContainer.satifies(taskToLaunch.getProfile(), constraint)) {
               try {
-                final TaskInfo task = taskFactoryMap.get(taskPrefix).createTask(offer, schedulerState.getFrameworkID().get(),
-                    pendingTaskId, taskToLaunch);
-                List<OfferID> offerIds = new ArrayList<>();
-                offerIds.add(offer.getId());
-                List<TaskInfo> tasks = new ArrayList<>();
-                tasks.add(task);
+                final TaskInfo task = taskFactoryMap.get(taskPrefix).createTask(resourceOfferContainer,
+                    schedulerState.getFrameworkID().get(), pendingTaskId, taskToLaunch);
                 LOGGER.info("Launching task: {} using offer: {}", task.getTaskId().getValue(), offer.getId());
                 LOGGER.debug("Launching task: {} with profile: {} using offer: {}", task, profile, offer);
-                driver.launchTasks(offerIds, tasks);
+                driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(task));
                 schedulerState.makeTaskStaging(pendingTaskId);
-
                 // For every NM Task that we launch, we currently
                 // need to backup the ExecutorInfo for that NM Task in the State Store.
                 // Without this, we will not be able to launch tasks corresponding to yarn
@@ -154,6 +140,7 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
               } catch (Throwable t) {
                 LOGGER.error("Exception thrown while trying to create a task for {}", taskPrefix, t);
               }
+
             }
           }
           for (Protos.TaskID taskId : missingTasks) {
@@ -179,6 +166,18 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
       driverOperationLock.unlock();
     }
   }
+
+
+  /**
+   * Helper function that returns all scalar resources of a given name in an offer up to a given value.  Attempts to
+   * take resource from the prescribed role first and then from the default role.  The variable used indicated any
+   * resources previously requested.   Assumes enough resources are present.
+   *
+   * @param offer - An offer by Mesos, assumed to have enough resources.
+   * @return An Iterable containing one or two scalar resources of a given name in an offer up to a given value.
+   */
+
+
 
   private boolean matches(Offer offer, NodeTask taskToLaunch, Constraint constraint) {
     if (!meetsConstraint(offer, constraint)) {
@@ -211,11 +210,9 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
 
   private boolean checkAggregates(Offer offer, NodeTask taskToLaunch, int ports, double cpus, double mem) {
     final ServiceResourceProfile profile = taskToLaunch.getProfile();
-    final String taskPrefix = taskToLaunch.getTaskPrefix();
     final double aggrCpu = profile.getAggregateCpu() + profile.getExecutorCpu();
     final double aggrMem = profile.getAggregateMemory() + profile.getExecutorMemory();
-    final TaskConstraints taskConstraints = taskConstraintsManager.getConstraints(taskPrefix);
-    if (aggrCpu <= cpus && aggrMem <= mem && taskConstraints.portsCount() <= ports) {
+    if (aggrCpu <= cpus && aggrMem <= mem) {
       return true;
     } else {
       LOGGER.info("Offer not sufficient for task with, cpu: {}, memory: {}, ports: {}", aggrCpu, aggrMem, ports);

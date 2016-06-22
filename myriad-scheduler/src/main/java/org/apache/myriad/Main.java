@@ -25,9 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,9 +48,6 @@ import org.apache.myriad.scheduler.NMProfile;
 import org.apache.myriad.scheduler.Rebalancer;
 import org.apache.myriad.scheduler.ServiceProfileManager;
 import org.apache.myriad.scheduler.ServiceResourceProfile;
-import org.apache.myriad.scheduler.ServiceTaskConstraints;
-import org.apache.myriad.scheduler.TaskConstraintsManager;
-import org.apache.myriad.scheduler.TaskFactory;
 import org.apache.myriad.scheduler.TaskTerminator;
 import org.apache.myriad.scheduler.TaskUtils;
 import org.apache.myriad.scheduler.yarn.interceptor.InterceptorRegistry;
@@ -147,8 +143,6 @@ public class Main {
   private void initProfiles(Injector injector) {
     LOGGER.info("Initializing Profiles");
     ServiceProfileManager profileManager = injector.getInstance(ServiceProfileManager.class);
-    TaskConstraintsManager taskConstraintsManager = injector.getInstance(TaskConstraintsManager.class);
-    taskConstraintsManager.addTaskConstraints(NodeManagerConfiguration.NM_TASK_PREFIX, new TaskFactory.NMTaskConstraints());
     Map<String, Map<String, String>> profiles = injector.getInstance(MyriadConfiguration.class).getProfiles();
     TaskUtils taskUtils = injector.getInstance(TaskUtils.class);
     if (MapUtils.isNotEmpty(profiles)) {
@@ -157,12 +151,8 @@ public class Main {
         if (MapUtils.isNotEmpty(profiles) && profileResourceMap.containsKey("cpu") && profileResourceMap.containsKey("mem")) {
           Long cpu = Long.parseLong(profileResourceMap.get("cpu"));
           Long mem = Long.parseLong(profileResourceMap.get("mem"));
-
           ServiceResourceProfile serviceProfile = new ExtendedResourceProfile(new NMProfile(profile.getKey(), cpu, mem),
-              taskUtils.getNodeManagerCpus(), taskUtils.getNodeManagerMemory());
-          serviceProfile.setExecutorCpu(taskUtils.getExecutorCpus());
-          serviceProfile.setExecutorMemory(taskUtils.getExecutorMemory());
-
+              taskUtils.getNodeManagerCpus(), taskUtils.getNodeManagerMemory(), taskUtils.getNodeManagerPorts());
           profileManager.add(serviceProfile);
         } else {
           LOGGER.error("Invalid definition for profile: " + profile.getKey());
@@ -170,12 +160,10 @@ public class Main {
       }
     }
   }
-
   private void validateNMInstances(Injector injector) {
     LOGGER.info("Validating nmInstances..");
     Map<String, Integer> nmInstances = injector.getInstance(MyriadConfiguration.class).getNmInstances();
     ServiceProfileManager profileManager = injector.getInstance(ServiceProfileManager.class);
-
     long maxCpu = Long.MIN_VALUE;
     long maxMem = Long.MIN_VALUE;
     for (Map.Entry<String, Integer> entry : nmInstances.entrySet()) {
@@ -237,7 +225,6 @@ public class Main {
   private void initServiceConfigurations(MyriadConfiguration cfg, Injector injector) {
     LOGGER.info("Initializing initServiceConfigurations");
     ServiceProfileManager profileManager = injector.getInstance(ServiceProfileManager.class);
-    TaskConstraintsManager taskConstraintsManager = injector.getInstance(TaskConstraintsManager.class);
 
     Map<String, ServiceConfiguration> servicesConfigs = injector.getInstance(MyriadConfiguration.class).getServiceConfigurations();
  
@@ -246,9 +233,8 @@ public class Main {
       ServiceConfiguration config = entry.getValue();
       final Double cpu = config.getCpus();
       final Double mem = config.getJvmMaxMemoryMB();
-
-      profileManager.add(new ServiceResourceProfile(taskPrefix, cpu, mem));
-      taskConstraintsManager.addTaskConstraints(taskPrefix, new ServiceTaskConstraints(cfg, taskPrefix));
+      final Map<String, Long> ports = config.getPorts();
+      profileManager.add(new ServiceResourceProfile(taskPrefix, cpu, mem, ports));
     }
   }
 
