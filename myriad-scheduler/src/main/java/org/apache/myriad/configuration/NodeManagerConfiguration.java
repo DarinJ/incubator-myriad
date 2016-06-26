@@ -20,10 +20,6 @@ package org.apache.myriad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
-import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerBoolean;
-import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerDouble;
-import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerString;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -66,7 +62,7 @@ public class NodeManagerConfiguration {
    * Translates to -Xmx for the NodeManager JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerDouble.class)
+  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
 
   /**
@@ -74,14 +70,14 @@ public class NodeManagerConfiguration {
    * for NodeManager auxiliary services.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerDouble.class)
+  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double cpus;
 
   /**
    * Translates to JAVA_OPTS for the NodeManager JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializerString.class)
   private String jvmOpts;
 
   @JsonProperty
@@ -91,7 +87,7 @@ public class NodeManagerConfiguration {
    * Determines if cgroups are enabled for the NodeManager
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerBoolean.class)
+  //@JsonSerialize(using = OptionalSerializerBoolean.class)
   private Boolean cgroups;
 
   private Double generateNodeManagerMemory() {

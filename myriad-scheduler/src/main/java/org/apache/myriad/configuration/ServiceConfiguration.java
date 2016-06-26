@@ -21,7 +21,6 @@ package org.apache.myriad.configuration;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -52,25 +51,25 @@ public class ServiceConfiguration {
    * Translates to -Xmx for the Mesos executor JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
   protected Double jvmMaxMemoryMB;
 
   /**
    * Amount of CPU share given to Mesos executor JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
   protected Double cpus;
 
   /**
    * Translates to JVM opts for the Mesos executor JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String jvmOpts;
 
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerMap.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerMap.class)
   protected Map<String, Long> ports;
 
   /**
@@ -79,7 +78,7 @@ public class ServiceConfiguration {
    * we can use this one to have a specific implementation
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String taskFactoryImplName;
 
   @JsonProperty
@@ -90,11 +89,12 @@ public class ServiceConfiguration {
   protected String taskName;
 
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerInt.class)
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerInt.class)
   protected Integer maxInstances;
 
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
+  @NotEmpty
+  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String command;
 
   @JsonProperty

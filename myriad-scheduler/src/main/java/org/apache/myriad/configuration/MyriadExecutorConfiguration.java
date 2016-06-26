@@ -20,10 +20,7 @@ package org.apache.myriad.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
-import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerDouble;
-import org.apache.myriad.configuration.OptionalSerializer.OptionalSerializerString;
 import org.apache.myriad.executor.MyriadExecutorDefaults;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.hibernate.validator.constraints.NotEmpty;
 
 /**
@@ -34,7 +31,7 @@ public class MyriadExecutorConfiguration {
    * Translates to -Xmx for the NodeManager JVM.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerDouble.class)
+  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
 
   @JsonProperty
@@ -42,11 +39,11 @@ public class MyriadExecutorConfiguration {
   private String path;
 
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializerString.class)
   private String nodeManagerUri;
 
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializerString.class)
   private String configUri;
 
   /**
@@ -56,7 +53,7 @@ public class MyriadExecutorConfiguration {
    * inside sandbox.
    */
   @JsonProperty
-  @JsonSerialize(using = OptionalSerializerString.class)
+  //@JsonSerialize(using = OptionalSerializerString.class)
   private String jvmUri;
 
   private Double generateMaxMemory() {
