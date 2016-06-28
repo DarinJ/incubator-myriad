@@ -68,17 +68,17 @@ public class TestResourceOfferContainer {
     ServiceResourceProfile profile1 = new ExtendedResourceProfile(new NMProfile("small", 2L, 6000L), .2, 1024.0, ports);
     ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile1);
     assertTrue(roc.getHostName().equals("test.com"));
-    assertTrue("Should be satisfied if offer contains request", roc.satifies(profile1));
+    assertTrue("Should be satisfied if offer contains request", roc.satisfies(profile1));
     ServiceResourceProfile profile2 = new ExtendedResourceProfile(new NMProfile("tooMuchCpu", 7L, 8000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile2);
-    assertFalse("Should be unsatisfied if too much cpu requested", roc.satifies(profile2));
+    assertFalse("Should be unsatisfied if too much cpu requested", roc.satisfies(profile2));
     ServiceResourceProfile profile3 = new ExtendedResourceProfile(new NMProfile("tooMuchMem", 3L, 50000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile3);
-    assertFalse("Should be unsatisfied if too much memory requested", roc.satifies(profile3));
+    assertFalse("Should be unsatisfied if too much memory requested", roc.satisfies(profile3));
     ports.put("test.bad.address", 1500L);
     ServiceResourceProfile profile4 = new ExtendedResourceProfile(new NMProfile("portOutOfRange", 3L, 50000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile4);
-    assertFalse("Should be unsatisfied if port not in range", roc.satifies(profile4));
+    assertFalse("Should be unsatisfied if port not in range", roc.satisfies(profile4));
     List<Protos.Resource> resourcesCpu = roc.consumeCpus(3.0);
     assertTrue("Should get a list of resources of size 1", resourcesCpu.size() == 1.0);
     assertTrue("Cpus should be decreased", roc.getCpus() == 1.0);
@@ -105,17 +105,17 @@ public class TestResourceOfferContainer {
     ServiceResourceProfile profile1 = new ExtendedResourceProfile(new NMProfile("small", 2L, 8000L), .2, 1024.0, ports);
     ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile1);
     assertTrue(roc.getHostName().equals("test.com"));
-    assertTrue("Should be satisfied if offer contains request", roc.satifies(profile1));
+    assertTrue("Should be satisfied if offer contains request", roc.satisfies(profile1));
     ServiceResourceProfile profile2 = new ExtendedResourceProfile(new NMProfile("tooMuchCpu", 7L, 8000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile2);
-    assertFalse("Should be unsatisfied if too much cpu requested", roc.satifies(profile2));
+    assertFalse("Should be unsatisfied if too much cpu requested", roc.satisfies(profile2));
     ServiceResourceProfile profile3 = new ExtendedResourceProfile(new NMProfile("tooMuchMem", 3L, 50000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile3);
-    assertFalse("Should be unsatisfied if too much memory requested", roc.satifies(profile3));
+    assertFalse("Should be unsatisfied if too much memory requested", roc.satisfies(profile3));
     ports.put("test.bad.address", 32000L);
     ServiceResourceProfile profile4 = new ExtendedResourceProfile(new NMProfile("portOutOfRange", 3L, 50000L), .2, 1024.0, ports);
     roc = new ResourceOfferContainer(offer, profile4);
-    assertFalse("Should be unsatisfied if port not in range", roc.satifies(profile4));
+    assertFalse("Should be unsatisfied if port not in range", roc.satisfies(profile4));
     List<Protos.Resource> resources = roc.consumeCpus(4.5);
     assertTrue("Resource List should be of size to when requesting 4.1 cpus", (resources.size() == 2));
     assertTrue("Cpus should be decreased", roc.getCpus() <= 1.5);
@@ -139,7 +139,7 @@ public class TestResourceOfferContainer {
     ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 2.0, 8000.0, ports);
     ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile);
     assertTrue(roc.getHostName().equals("test.com"));
-    assertTrue("Should be satisfied if offer contains request", roc.satifies(profile));
+    assertTrue("Should be satisfied if offer contains request", roc.satisfies(profile));
   }
 
   @Test
@@ -160,7 +160,7 @@ public class TestResourceOfferContainer {
     ServiceResourceProfile profile = new ServiceResourceProfile("jobhistory", 2.0, 8000.0, ports);
     ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile);
     assertTrue(roc.getHostName().equals("test.com"));
-    assertTrue("Should be satisfied if offer contains request", roc.satifies(profile));
+    assertTrue("Should be satisfied if offer contains request", roc.satisfies(profile));
   }
 
   private List<ServiceResourceProfile> getProfiles(MyriadConfiguration conf) {

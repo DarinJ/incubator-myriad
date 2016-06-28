@@ -95,7 +95,7 @@ public class ResourceOfferContainer {
    * @param profile
    * @return
    */
-  public boolean satifies(ServiceResourceProfile profile) {
+  public boolean satisfies(ServiceResourceProfile profile) {
     return scalarValues.get(RESOURCE_CPUS).satisfies(profile.getAggregateCpu()) &&
         scalarValues.get(RESOURCE_MEM).satisfies(profile.getAggregateMemory()) &&
         ports.satisfies(profile.getPorts().values());
@@ -108,8 +108,8 @@ public class ResourceOfferContainer {
    * @param constraint
    * @return
    */
-  public boolean satifies(ServiceResourceProfile profile, Constraint constraint) {
-    return satifies(profile) && meetsConstraint(constraint);
+  public boolean satisfies(ServiceResourceProfile profile, Constraint constraint) {
+    return satisfies(profile) && meetsConstraint(constraint);
   }
 
   private boolean meetsConstraint(Constraint constraint) {

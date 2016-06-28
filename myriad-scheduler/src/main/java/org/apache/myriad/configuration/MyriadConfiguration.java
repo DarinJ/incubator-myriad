@@ -133,11 +133,9 @@ public class MyriadConfiguration {
   private String frameworkRole;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   private String frameworkUser;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   private String frameworkSuperUser;
 
   @JsonProperty

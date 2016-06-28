@@ -62,7 +62,6 @@ public class NodeManagerConfiguration {
    * Translates to -Xmx for the NodeManager JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
 
   /**
@@ -70,14 +69,12 @@ public class NodeManagerConfiguration {
    * for NodeManager auxiliary services.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double cpus;
 
   /**
    * Translates to JAVA_OPTS for the NodeManager JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerString.class)
   private String jvmOpts;
 
   @JsonProperty
@@ -87,7 +84,6 @@ public class NodeManagerConfiguration {
    * Determines if cgroups are enabled for the NodeManager
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerBoolean.class)
   private Boolean cgroups;
 
   private Double generateNodeManagerMemory() {

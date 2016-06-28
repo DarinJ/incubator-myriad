@@ -95,7 +95,7 @@ public class RangeResource {
           Long begin = range.getBegin();
           Long end = range.getEnd();
           for (Long val:nonZeros) {
-            if (val.longValue() >= begin && val.longValue() <= end) {
+            if (val >= begin && val <= end) {
               numFound++;
             }
           }
@@ -158,7 +158,7 @@ public class RangeResource {
     resourceValues = mergeRangeValues(valuesRequested, randomValues);
   }
 
-  private List contiguousRange(long begin, long end) {
+  private List<Long> contiguousRange(long begin, long end) {
     ArrayList<Long> ret = new ArrayList<>();
     for (long i = begin; i <= end; i++) {
       ret.add(i);

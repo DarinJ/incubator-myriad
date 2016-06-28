@@ -28,13 +28,10 @@ import javax.inject.Inject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Value;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.myriad.scheduler.*;
 import org.apache.myriad.scheduler.constraints.Constraint;
-import org.apache.myriad.scheduler.constraints.LikeConstraint;
 import org.apache.myriad.scheduler.event.ResourceOffersEvent;
 import org.apache.myriad.scheduler.fgs.OfferLifecycleManager;
 import org.apache.myriad.scheduler.resource.ResourceOfferContainer;
@@ -119,7 +116,7 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
 
             ResourceOfferContainer resourceOfferContainer = new ResourceOfferContainer(offer, taskToLaunch.getProfile());
             if (SchedulerUtils.isUniqueHostname(offer, taskToLaunch, launchedTasks)
-                && resourceOfferContainer.satifies(taskToLaunch.getProfile(), constraint)) {
+                && resourceOfferContainer.satisfies(taskToLaunch.getProfile(), constraint)) {
               try {
                 final TaskInfo task = taskFactoryMap.get(taskPrefix).createTask(resourceOfferContainer,
                     schedulerState.getFrameworkID().get(), pendingTaskId, taskToLaunch);
@@ -140,7 +137,6 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
               } catch (Throwable t) {
                 LOGGER.error("Exception thrown while trying to create a task for {}", taskPrefix, t);
               }
-
             }
           }
           for (Protos.TaskID taskId : missingTasks) {
@@ -165,133 +161,5 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
     } finally {
       driverOperationLock.unlock();
     }
-  }
-
-
-  /**
-   * Helper function that returns all scalar resources of a given name in an offer up to a given value.  Attempts to
-   * take resource from the prescribed role first and then from the default role.  The variable used indicated any
-   * resources previously requested.   Assumes enough resources are present.
-   *
-   * @param offer - An offer by Mesos, assumed to have enough resources.
-   * @return An Iterable containing one or two scalar resources of a given name in an offer up to a given value.
-   */
-
-
-
-  private boolean matches(Offer offer, NodeTask taskToLaunch, Constraint constraint) {
-    if (!meetsConstraint(offer, constraint)) {
-      return false;
-    }
-    Map<String, Object> results = new HashMap<String, Object>(5);
-    //Assign default values to avoid NPE
-    results.put(RESOURCES_CPU_KEY, Double.valueOf(0.0));
-    results.put(RESOURCES_MEM_KEY, Double.valueOf(0.0));
-    results.put(RESOURCES_DISK_KEY, Double.valueOf(0.0));
-    results.put(RESOURCES_PORTS_KEY, Integer.valueOf(0));
-
-    for (Resource resource : offer.getResourcesList()) {
-      if (resourceEvaluators.containsKey(resource.getName())) {
-        resourceEvaluators.get(resource.getName()).eval(resource, results);
-      } else {
-        LOGGER.warn("Ignoring unknown resource type: {}", resource.getName());
-      }
-    }
-    double cpus = (Double) results.get(RESOURCES_CPU_KEY);
-    double mem = (Double) results.get(RESOURCES_MEM_KEY);
-    int ports = (Integer) results.get(RESOURCES_PORTS_KEY);
-
-    checkResource(cpus <= 0, RESOURCES_CPU_KEY);
-    checkResource(mem <= 0, RESOURCES_MEM_KEY);
-    checkResource(ports <= 0, RESOURCES_PORTS_KEY);
-
-    return checkAggregates(offer, taskToLaunch, ports, cpus, mem);
-  }
-
-  private boolean checkAggregates(Offer offer, NodeTask taskToLaunch, int ports, double cpus, double mem) {
-    final ServiceResourceProfile profile = taskToLaunch.getProfile();
-    final double aggrCpu = profile.getAggregateCpu() + profile.getExecutorCpu();
-    final double aggrMem = profile.getAggregateMemory() + profile.getExecutorMemory();
-    if (aggrCpu <= cpus && aggrMem <= mem) {
-      return true;
-    } else {
-      LOGGER.info("Offer not sufficient for task with, cpu: {}, memory: {}, ports: {}", aggrCpu, aggrMem, ports);
-      return false;
-    }
-  }
-
-  private boolean meetsConstraint(Offer offer, Constraint constraint) {
-    if (constraint != null) {
-      switch (constraint.getType()) {
-        case LIKE: {
-          LikeConstraint likeConstraint = (LikeConstraint) constraint;
-          if (likeConstraint.isConstraintOnHostName()) {
-            return likeConstraint.matchesHostName(offer.getHostname());
-          } else {
-            return likeConstraint.matchesSlaveAttributes(offer.getAttributesList());
-          }
-        }
-        default:
-          return false;
-      }
-    }
-    return true;
-  }
-
-  private void checkResource(boolean fail, String resource) {
-    if (fail) {
-      LOGGER.info("No " + resource + " resources present");
-    }
-  }
-
-  private static Double scalarToDouble(Resource resource, String id) {
-    Double value = new Double(0.0);
-    if (resource.getType().equals(Value.Type.SCALAR)) {
-      value = new Double(resource.getScalar().getValue());
-    } else {
-      LOGGER.error(id + " resource was not a scalar: {}", resource.getType().toString());
-    }
-    return value;
-  }
-
-  private interface EvalResources {
-    public void eval(Resource resource, Map<String, Object> results);
-  }
-
-  private static Map<String, EvalResources> resourceEvaluators;
-
-  static {
-    resourceEvaluators = new HashMap<String, EvalResources>(4);
-    resourceEvaluators.put(RESOURCES_CPU_KEY, new EvalResources() {
-      public void eval(Resource resource, Map<String, Object> results) {
-        results.put(RESOURCES_CPU_KEY, (Double) results.get(RESOURCES_CPU_KEY) + scalarToDouble(resource, RESOURCES_CPU_KEY));
-      }
-    });
-    resourceEvaluators.put(RESOURCES_MEM_KEY, new EvalResources() {
-      public void eval(Resource resource, Map<String, Object> results) {
-        results.put(RESOURCES_MEM_KEY, (Double) results.get(RESOURCES_MEM_KEY) + scalarToDouble(resource, RESOURCES_MEM_KEY));
-      }
-    });
-    resourceEvaluators.put(RESOURCES_DISK_KEY, new EvalResources() {
-      public void eval(Resource resource, Map<String, Object> results) {
-      }
-    });
-    resourceEvaluators.put(RESOURCES_PORTS_KEY, new EvalResources() {
-      public void eval(Resource resource, Map<String, Object> results) {
-        int ports = 0;
-        if (resource.getType().equals(Value.Type.RANGES)) {
-          Value.Ranges ranges = resource.getRanges();
-          for (Value.Range range : ranges.getRangeList()) {
-            if (range.getBegin() < range.getEnd()) {
-              ports += range.getEnd() - range.getBegin() + 1;
-            }
-          }
-        } else {
-          LOGGER.error("ports resource was not Ranges: {}", resource.getType().toString());
-
-        }
-        results.put(RESOURCES_PORTS_KEY, (Integer) results.get(RESOURCES_PORTS_KEY) + Integer.valueOf(ports));
-      }
-    });
   }
 }

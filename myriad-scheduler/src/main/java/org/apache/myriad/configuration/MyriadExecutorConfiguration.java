@@ -31,7 +31,6 @@ public class MyriadExecutorConfiguration {
    * Translates to -Xmx for the NodeManager JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerDouble.class)
   private Double jvmMaxMemoryMB;
 
   @JsonProperty
@@ -39,11 +38,9 @@ public class MyriadExecutorConfiguration {
   private String path;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerString.class)
   private String nodeManagerUri;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializerString.class)
   private String configUri;
 
   /**

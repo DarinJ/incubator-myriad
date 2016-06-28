@@ -51,25 +51,21 @@ public class ServiceConfiguration {
    * Translates to -Xmx for the Mesos executor JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
   protected Double jvmMaxMemoryMB;
 
   /**
    * Amount of CPU share given to Mesos executor JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerDouble.class)
   protected Double cpus;
 
   /**
    * Translates to JVM opts for the Mesos executor JVM.
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String jvmOpts;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerMap.class)
   protected Map<String, Long> ports;
 
   /**
@@ -78,7 +74,6 @@ public class ServiceConfiguration {
    * we can use this one to have a specific implementation
    */
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String taskFactoryImplName;
 
   @JsonProperty
@@ -89,12 +84,10 @@ public class ServiceConfiguration {
   protected String taskName;
 
   @JsonProperty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerInt.class)
   protected Integer maxInstances;
 
   @JsonProperty
   @NotEmpty
-  //@JsonSerialize(using = OptionalSerializer.OptionalSerializerString.class)
   protected String command;
 
   @JsonProperty
