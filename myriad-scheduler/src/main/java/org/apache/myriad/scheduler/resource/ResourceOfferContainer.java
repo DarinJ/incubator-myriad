@@ -173,11 +173,11 @@ public class ResourceOfferContainer {
 
   private void setScalarValues() {
     for (Protos.Resource r : offer.getResourcesList()) {
-      if (r.hasScalar() && r.hasName() && r.hasRole() && r.getRole().equals(role)) {
+      if (r.hasScalar() && r.hasName() && r.hasRole() && !r.getRole().equals("*")) {
         addToScalarResource(r.getName(), r.getScalar().getValue(), true);
       } else if (r.hasName() && r.hasScalar()) {
         addToScalarResource(r.getName(), r.getScalar().getValue(), false);
-      } else if (r.hasRanges() && r.hasName() && r.hasRole() && r.getRole().equals(role)) {
+      } else if (r.hasRanges() && r.hasName() && r.hasRole() && !r.getRole().equals("*")) {
         addToRangeResource(r.getName(), r.getRanges().getRangeList(), true);
       } else if (r.hasRanges() && r.hasName()) {
         addToRangeResource(r.getName(), r.getRanges().getRangeList(), false);

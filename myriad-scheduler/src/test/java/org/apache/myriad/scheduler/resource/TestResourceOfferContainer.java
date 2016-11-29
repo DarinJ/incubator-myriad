@@ -56,7 +56,7 @@ public class TestResourceOfferContainer {
     Protos.Offer offer = new OfferBuilder("test.com")
         .addScalarResource("cpus", 4.0)
         .addScalarResource("mem", 8000)
-        .addRangeResource("ports", 3500, 3600)
+        .addRangeResource("ports", "*", 3500, 3600)
         .build();
     Map<String, Long> ports = new HashMap<>(4);
     ports.put("test1.address", 0L);
@@ -64,21 +64,18 @@ public class TestResourceOfferContainer {
     ports.put("test3.address", 0L);
     ports.put("test4.port", 3501L);
     ServiceResourceProfile profile1 = new ExtendedResourceProfile(new NMProfile("small", 2L, 6000L), .2, 1024.0, ports);
-    ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile1, "");
-    System.out.print(roc.getCpus());
-    System.out.print(roc.getMem());
-    System.out.print(roc.getPorts());
+    ResourceOfferContainer roc = new ResourceOfferContainer(offer, profile1, "*");
     assertTrue(roc.getHostName().equals("test.com"));
     assertTrue("Should be satisfied if offer contains request", roc.satisfies(profile1));
     ServiceResourceProfile profile2 = new ExtendedResourceProfile(new NMProfile("tooMuchCpu", 7L, 8000L), .2, 1024.0, ports);
-    roc = new ResourceOfferContainer(offer, profile2, "");
+    roc = new ResourceOfferContainer(offer, profile2, "*");
     assertFalse("Should be unsatisfied if too much cpu requested", roc.satisfies(profile2));
     ServiceResourceProfile profile3 = new ExtendedResourceProfile(new NMProfile("tooMuchMem", 3L, 50000L), .2, 1024.0, ports);
-    roc = new ResourceOfferContainer(offer, profile3, "");
+    roc = new ResourceOfferContainer(offer, profile3, "*");
     assertFalse("Should be unsatisfied if too much memory requested", roc.satisfies(profile3));
     ports.put("test.bad.address", 1500L);
     ServiceResourceProfile profile4 = new ExtendedResourceProfile(new NMProfile("portOutOfRange", 3L, 50000L), .2, 1024.0, ports);
-    roc = new ResourceOfferContainer(offer, profile4, "");
+    roc = new ResourceOfferContainer(offer, profile4, "*");
     assertFalse("Should be unsatisfied if port not in range", roc.satisfies(profile4));
     List<Protos.Resource> resourcesCpu = roc.consumeCpus(3.0);
     assertTrue("Should get a list of resources of size 1", resourcesCpu.size() == 1.0);
